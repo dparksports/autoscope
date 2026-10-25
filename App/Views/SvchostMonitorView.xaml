@@ -101,7 +101,7 @@
                          no Placement/PlacementTarget/StaysOpen — the popup is
                          positioned under its button by OpenPopupBelow and
                          dismissed by LayoutRoot_PointerPressed. -->
-                    <Popup x:Name="BlockedListPopup">
+                    <Popup x:Name="BlockedListPopup" IsLightDismissEnabled="True">
                         <Border Background="{ThemeResource SurfaceAltBrush}" BorderBrush="{ThemeResource BorderBrush}" BorderThickness="1" CornerRadius="4" Padding="10" MinWidth="340" Margin="0,4,0,0">
                             <StackPanel>
                                 <TextBlock Text="Firewall blocks created from this monitor" Foreground="{ThemeResource TextPrimaryBrush}" FontWeight="SemiBold" Margin="0,0,0,6"/>
@@ -122,7 +122,7 @@
                             </StackPanel>
                         </Border>
                     </Popup>
-                    <Popup x:Name="IgnoredListPopup">
+                    <Popup x:Name="IgnoredListPopup" IsLightDismissEnabled="True">
                         <Border Background="{ThemeResource SurfaceAltBrush}" BorderBrush="{ThemeResource BorderBrush}" BorderThickness="1" CornerRadius="4" Padding="10" MinWidth="260" Margin="0,4,0,0">
                             <StackPanel>
                                 <TextBlock Text="Ignored processes" Foreground="{ThemeResource TextPrimaryBrush}" FontWeight="SemiBold" Margin="0,0,0,6"/>

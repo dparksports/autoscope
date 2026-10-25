@@ -8,7 +8,7 @@
     <RootNamespace>AutoScope</RootNamespace>
     <AssemblyName>AutoScope.Core</AssemblyName>
     <Product>AutoScope</Product>
-    <Version>0.1.5</Version>
+    <Version>0.1.6</Version>
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>

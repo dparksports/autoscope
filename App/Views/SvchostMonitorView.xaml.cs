@@ -39,6 +39,8 @@ namespace AutoScope.Views
         // without per-packet collection churn).
         private readonly object _shapingDirtyGate = new();
         private readonly HashSet<SvchostMonitorItem> _shapingDirty = new();
+        private DateTime _blockedPopupClosedAt = DateTime.MinValue;
+        private DateTime _ignoredPopupClosedAt = DateTime.MinValue;
         private Microsoft.UI.Dispatching.DispatcherQueueTimer _shapingTimer;
         private bool _txOnlyFilterOn;
 
@@ -155,6 +157,14 @@ namespace AutoScope.Views
             _sysmonService.OnError += ShowError;
             _sysmonService.OnNewConnectionTracked += AddToUi;
 
+            // Popup dismissal is IsLightDismissEnabled (platform-level, the
+            // WinUI equivalent of WPF StaysOpen="False") — declared in XAML.
+            // The Closed timestamps give the anchor buttons toggle behavior.
+            BlockedListPopup.Closed += (_, _) => _blockedPopupClosedAt = DateTime.Now;
+            IgnoredListPopup.Closed += (_, _) => _ignoredPopupClosedAt = DateTime.Now;
+
+            // Backup dismissal path (v0.1.5 mechanism) — belt and braces in
+            // case light-dismiss is unavailable on some builds.
             // WinUI port of Popup StaysOpen="False": the DataGrid marks
             // pointer presses handled, so a XAML-wired bubbling handler never
             // fired — register for handled events too (any press anywhere
@@ -726,6 +736,8 @@ namespace AutoScope.Views
 
         private void IgnoredListBtn_Click(object sender, RoutedEventArgs e)
         {
+            if ((DateTime.Now - _ignoredPopupClosedAt).TotalMilliseconds < 400)
+                return; // this button's press light-dismissed it — toggle off
             RefreshIgnoredUi();
             // WinUI port: Popup placement under the button (see OpenPopupBelow)
             OpenPopupBelow(IgnoredListPopup, IgnoredListBtn);
@@ -1219,6 +1231,8 @@ namespace AutoScope.Views
 
         private void BlockedListBtn_Click(object sender, RoutedEventArgs e)
         {
+            if ((DateTime.Now - _blockedPopupClosedAt).TotalMilliseconds < 400)
+                return; // this button's press light-dismissed it — toggle off
             RefreshBlockedUi();
             // WinUI port: Popup placement under the button (see OpenPopupBelow)
             OpenPopupBelow(BlockedListPopup, BlockedListBtn);
