@@ -32,6 +32,14 @@ namespace AutoScope.Views
         // RefreshView. _uiCollection stays the unfiltered master every other
         // loop in this view walks, exactly like the WPF default view did.
         private readonly ObservableCollection<SvchostMonitorItem> _viewCollection = new();
+
+        // WinUI port of WPF's ICollectionViewLiveShaping: items raise change
+        // notifications off the sniffer threads; dirty ones are re-sorted by
+        // a fast coalescing tick below (near-instant row repositioning
+        // without per-packet collection churn).
+        private readonly object _shapingDirtyGate = new();
+        private readonly HashSet<SvchostMonitorItem> _shapingDirty = new();
+        private Microsoft.UI.Dispatching.DispatcherQueueTimer _shapingTimer;
         private bool _txOnlyFilterOn;
 
         // WinUI port: the WPF Dispatcher/DispatcherTimer pair — obtained once
@@ -177,6 +185,20 @@ namespace AutoScope.Views
             _saveTimer = _dispatcherQueue.CreateTimer();
             _saveTimer.Interval = TimeSpan.FromHours(1);
             _saveTimer.Tick += (s, args) => SaveToCsv();
+
+            // Live-shaping coalescer: reposition dirty rows ~instantly
+            // (WPF re-sorted on every packet via ICollectionViewLiveShaping)
+            _shapingTimer = _dispatcherQueue.CreateTimer();
+            _shapingTimer.Interval = TimeSpan.FromMilliseconds(500);
+            _shapingTimer.Tick += (s2, args2) =>
+            {
+                bool any;
+                lock (_shapingDirtyGate) any = _shapingDirty.Count > 0;
+                if (!any) return;
+                lock (_shapingDirtyGate) _shapingDirty.Clear();
+                RefreshView();
+            };
+            _shapingTimer.Start();
 
             // Refresh relative "Last Packet" column + DNS cache chip every 10 seconds
             _lastSeenRefreshTimer = _dispatcherQueue.CreateTimer();
@@ -471,6 +493,18 @@ namespace AutoScope.Views
             });
         }
 
+        /// <summary>Shaping properties that re-sort/re-filter the row in
+        /// WPF's live view — SameShape names as the SortDescriptions.</summary>
+        private void OnItemShapingChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName != nameof(SvchostMonitorItem.LastSeen) &&
+                e.PropertyName != nameof(SvchostMonitorItem.IsHighTransmitter) &&
+                e.PropertyName != nameof(SvchostMonitorItem.IsTxOnly)) return;
+            if (sender is SvchostMonitorItem it)
+                lock (_shapingDirtyGate) _shapingDirty.Add(it);
+            // the always-on _shapingTimer drains the set on its next tick
+        }
+
         private void AddToUi(SvchostMonitorItem item)
         {
             // WinUI port: Dispatcher.Invoke → DispatcherQueue.TryEnqueue
@@ -488,6 +522,7 @@ namespace AutoScope.Views
                 // not only after the next sync pass
                 ApplyBlockState(item);
                 _uiCollection.Add(item);
+                item.PropertyChanged += OnItemShapingChanged; // live shaping
                 // WinUI port: live sorting positioned new rows via the
                 // collection view — insert into the sorted projection instead
                 InsertInView(item);
@@ -706,6 +741,7 @@ namespace AutoScope.Views
         {
             foreach (var item in _uiCollection.Where(i => _sysmonService.IsProcessIgnored(i.ProcessName)).ToList())
             {
+                item.PropertyChanged -= OnItemShapingChanged;
                 _uiCollection.Remove(item);
                 _viewCollection.Remove(item); // WinUI port: keep the projection in step
                 _trackedIps.TryRemove(item.RemoteIp, out _);

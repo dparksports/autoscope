@@ -28,12 +28,28 @@ namespace AutoScope.Services
         {
             try
             {
-                // v0.1.1 wrote the ignore list CWD-relative, which for an
-                // elevated launch meant System32 — remove our own stray.
+                // v0.1.2 wrongly DELETED System32\ignored_processes.txt as
+                // "our stray" — but AutoCommand reads/writes that exact file
+                // whenever IT runs elevated (its list is CWD-relative too).
+                // Restore its last known content (the entries v0.1.1 left
+                // there) once, and never touch the file again.
                 try
                 {
-                    string stray = Path.Combine(Environment.SystemDirectory, "ignored_processes.txt");
-                    if (File.Exists(stray)) File.Delete(stray);
+                    string shared = Path.Combine(Environment.SystemDirectory, "ignored_processes.txt");
+                    string restoreMarker = Path.Combine(DataDir, "restored-autocommand-ignore.done");
+                    if (!File.Exists(shared) && !File.Exists(restoreMarker))
+                    {
+                        var ours = new SysmonWatcherService(
+                            new System.Collections.Concurrent.ConcurrentDictionary<string, Models.SvchostMonitorItem>(),
+                            new DnsResolutionService());
+                        if (ours.IgnoredProcesses.Count > 0)
+                        {
+                            File.WriteAllLines(shared, ours.IgnoredProcesses);
+                            Directory.CreateDirectory(DataDir);
+                            File.WriteAllText(restoreMarker,
+                                $"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC — restored AutoCommand's elevated ignore list after v0.1.2 deleted it");
+                        }
+                    }
                 }
                 catch { /* best effort */ }
 
