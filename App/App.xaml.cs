@@ -56,6 +56,14 @@ namespace AutoScope
             // AutoCommand's Black Hole tab), start the logging listener so
             // proof accumulates even if no proof view is opened. No pins →
             // no-op.
+            // Keep the blocked list in step with the firewall (rules
+            // AutoCommand added since the migration snapshot get adopted);
+            // pages read the store fresh when opened.
+            _ = System.Threading.Tasks.Task.Run(async () =>
+            {
+                try { await Services.BlocksStore.ReconcileWithFirewallAsync(); } catch { }
+            });
+
             SinkholeService.Instance.EnsureRunningForCurrentPins();
             _ = TelemetryProofService.Instance.TotalDenied;
 

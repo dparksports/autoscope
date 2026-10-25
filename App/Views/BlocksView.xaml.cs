@@ -149,44 +149,12 @@ namespace AutoScope.Views
                     t => t.Key, t => t, StringComparer.OrdinalIgnoreCase);
 
                 // Records the firewall knows about but the store doesn't
-                // (rules from an older version, or pre-v3 blocks) become
-                // store records so the tab is complete.
+                // (rules from an older version, or blocks AutoCommand made
+                // since the migration snapshot) become store records so the
+                // tab is complete.
+                await BlocksStore.ReconcileWithFirewallAsync(inventory);
+
                 var records = BlocksStore.Records.ToList();
-                var known = new HashSet<string>(
-                    records.Select(r => (r.IsIp ? "ip:" : "app:") + r.Key.ToLowerInvariant()),
-                    StringComparer.OrdinalIgnoreCase);
-                foreach (var t in inventory)
-                {
-                    if (known.Contains(t.Key)) continue;
-                    var r = new BlockRecord
-                    {
-                        Kind = t.Kind == "ip" ? "ip" : "proc",
-                        Key = t.Kind == "ip" ? t.Ip : t.AppPath,
-                        ProcessName = System.IO.Path.GetFileName(t.AppPath ?? ""),
-                        CreatedUtc = t.Created ?? DateTime.UtcNow,
-                        StatusUtc = t.Created ?? DateTime.UtcNow,
-                        ClassAtBlock = t.Kind == "ip" ? IpClassifier.Classify(t.Ip) : BlocksStore.ClassForPath(t.AppPath ?? ""),
-                        Origin = "reconcile",
-                        Attrib = "none",
-                    };
-                    // The rules carry their own provenance — the service the
-                    // monitor resolved at block time is embedded in the
-                    // description, so reconcile recovers identity without
-                    // the archive.
-                    if (BlocksStore.TryParseServiceFromDescription(t.Description, out string sk, out string dn))
-                    {
-                        r.ServiceKey = sk;
-                        r.SvcDisplayName = dn;
-                        r.Attrib = "rule-desc";
-                    }
-                    else if (r.Kind == "proc" && !string.IsNullOrEmpty(r.Key))
-                    {
-                        r.ServiceKey = System.IO.Path.GetFileNameWithoutExtension(r.Key).ToLowerInvariant();
-                        r.SvcDisplayName = ServiceCatalog.DisplayNameFor(r.ServiceKey, null);
-                        r.Attrib = "catalog";
-                    }
-                    if (!string.IsNullOrEmpty(r.Key)) BlocksStore.AddOrUpdate(r, "reconcile");
-                }
                 if (records.Count == 0 || BlocksStore.Records.Count != records.Count) records = BlocksStore.Records.ToList();
 
                 var vms = new List<BlockRowVm>();

@@ -8,7 +8,7 @@
     <!-- WinUI port: the WPF UserControl root becomes the hosting Page; its
          root Grid ports as-is. LayoutRoot.PointerPressed approximates the
          WPF Popups' StaysOpen="False" (dismiss on any outside click). -->
-    <Grid x:Name="LayoutRoot" Margin="20" PointerPressed="LayoutRoot_PointerPressed">
+    <Grid x:Name="LayoutRoot" Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>

@@ -363,6 +363,61 @@ namespace AutoScope.Services
 
         /// <summary>Inserts or refreshes one block. Re-blocking the same key
         /// keeps the original CreatedUtc (history) but updates identity.</summary>
+        /// <summary>
+        /// Adopts firewall block-rule targets the store doesn't know yet —
+        /// the same reconcile the Blocks tab runs on reload, lifted here so
+        /// App startup can run it too. Keeps AutoScope's blocked list in
+        /// step with rules created by AutoCommand (AC-BLOCK) since the
+        /// migration snapshot. Returns how many records were adopted.
+        /// </summary>
+        public static async System.Threading.Tasks.Task<int> ReconcileWithFirewallAsync(
+            System.Collections.Generic.List<FirewallService.BlockedTarget> inventory = null)
+        {
+            inventory ??= await FirewallService.Instance.GetBlockedInventoryAsync();
+            int added = 0;
+            var known = new System.Collections.Generic.HashSet<string>(
+                Records.Select(r => (r.IsIp ? "ip:" : "app:") + r.Key.ToLowerInvariant()),
+                StringComparer.OrdinalIgnoreCase);
+            foreach (var t in inventory)
+            {
+                if (known.Contains(t.Key)) continue;
+                var r = new BlockRecord
+                {
+                    Kind = t.Kind == "ip" ? "ip" : "proc",
+                    Key = t.Kind == "ip" ? t.Ip : t.AppPath,
+                    ProcessName = System.IO.Path.GetFileName(t.AppPath ?? ""),
+                    CreatedUtc = t.Created ?? DateTime.UtcNow,
+                    StatusUtc = t.Created ?? DateTime.UtcNow,
+                    ClassAtBlock = t.Kind == "ip" ? IpClassifier.Classify(t.Ip) : ClassForPath(t.AppPath ?? ""),
+                    Origin = "reconcile",
+                    Attrib = "none",
+                };
+                // The rules carry their own provenance — the service the
+                // monitor resolved at block time is embedded in the
+                // description, so reconcile recovers identity without
+                // the archive.
+                if (TryParseServiceFromDescription(t.Description, out string sk, out string dn))
+                {
+                    r.ServiceKey = sk;
+                    r.SvcDisplayName = dn;
+                    r.Attrib = "rule-desc";
+                }
+                else if (r.Kind == "proc" && !string.IsNullOrEmpty(r.Key))
+                {
+                    r.ServiceKey = System.IO.Path.GetFileNameWithoutExtension(r.Key).ToLowerInvariant();
+                    r.SvcDisplayName = ServiceCatalog.DisplayNameFor(r.ServiceKey, null);
+                    r.Attrib = "catalog";
+                }
+                if (!string.IsNullOrEmpty(r.Key))
+                {
+                    AddOrUpdate(r, "reconcile");
+                    known.Add((r.IsIp ? "ip:" : "app:") + r.Key.ToLowerInvariant());
+                    added++;
+                }
+            }
+            return added;
+        }
+
         public static void AddOrUpdate(BlockRecord record, string origin = "monitor")
         {
             if (record == null || string.IsNullOrEmpty(record.Key)) return;

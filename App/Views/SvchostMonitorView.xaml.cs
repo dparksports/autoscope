@@ -155,6 +155,12 @@ namespace AutoScope.Views
             _sysmonService.OnError += ShowError;
             _sysmonService.OnNewConnectionTracked += AddToUi;
 
+            // WinUI port of Popup StaysOpen="False": the DataGrid marks
+            // pointer presses handled, so the XAML-wired handler never fired
+            // — register for handled events too (any press anywhere closes).
+            LayoutRoot.AddHandler(UIElement.PointerPressedEvent,
+                LayoutRoot_PointerPressed, handledEventsToo: true);
+
             _snifferService.OnError += ShowError;
 
             // Attribution errors are non-fatal (rows just lack task info)
@@ -1891,8 +1897,22 @@ namespace AutoScope.Views
         // (popup content clicks never reach the page, so they survive)
         private void LayoutRoot_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
-            if (BlockedListPopup.IsOpen) BlockedListPopup.IsOpen = false;
-            if (IgnoredListPopup.IsOpen) IgnoredListPopup.IsOpen = false;
+            var src = e.OriginalSource as DependencyObject;
+            if (BlockedListPopup.IsOpen && !IsInsidePopup(src, BlockedListPopup))
+                BlockedListPopup.IsOpen = false;
+            if (IgnoredListPopup.IsOpen && !IsInsidePopup(src, IgnoredListPopup))
+                IgnoredListPopup.IsOpen = false;
+        }
+
+        private static bool IsInsidePopup(DependencyObject src, Popup popup)
+        {
+            while (src != null)
+            {
+                if (ReferenceEquals(src, popup) ||
+                    (popup.Child != null && ReferenceEquals(src, popup.Child))) return true;
+                src = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(src);
+            }
+            return false;
         }
     }
 }
