@@ -5,3 +5,4 @@ publish_out/
 crash.log
 *.user
 .vs/
+*.zip
