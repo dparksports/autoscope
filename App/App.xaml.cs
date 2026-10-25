@@ -40,6 +40,12 @@ namespace AutoScope
 
         protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
+            // First run: adopt an existing AutoCommand install — block records
+            // and the ignored-process list merge in, and AC-BLOCK firewall
+            // rules become manageable here (never renamed). Before anything
+            // else so no store or watcher reads pre-migration state.
+            MigrationService.RunIfNeeded();
+
             // The bridge's tier-3 consent dialog (mutating AI actions) needs
             // a UI to ask with — install it before anything can start a session.
             AgentBridgeService.Ui = new AgentBridgeUI();

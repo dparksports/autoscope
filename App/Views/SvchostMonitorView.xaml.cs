@@ -1757,7 +1757,7 @@ namespace AutoScope.Views
                 }
                 else
                 {
-                    proc.Foreground = null; // back to the inherited default
+                    proc.Foreground = AppBrush("TextPrimaryBrush"); // WinUI TextBlock default is black — invisible on dark
                     proc.TextDecorations = Windows.UI.Text.TextDecorations.None;
                 }
                 ToolTipService.SetToolTip(proc, it.HasToolTip ? it.ProcessToolTip : null);

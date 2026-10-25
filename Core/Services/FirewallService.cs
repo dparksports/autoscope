@@ -430,7 +430,8 @@ namespace AutoScope.Services
         {
             return Task.Run(() =>
                 RemoveRulesByNamePrefix($"AutoScope IP Block - {remoteIp} (") +
-                RemoveRulesByNamePrefix($"{NewIpPrefix}{remoteIp} ("));
+                RemoveRulesByNamePrefix($"{NewIpPrefix}{remoteIp} (") +
+                RemoveRulesByNamePrefix($"{ImportedIpPrefix}{remoteIp} ("));
         }
 
         /// <summary>
@@ -454,7 +455,8 @@ namespace AutoScope.Services
                             string name = rule.Name ?? "";
                             string app = rule.ApplicationName ?? "";
                             if ((name.StartsWith("AutoScope Process Block - ", StringComparison.OrdinalIgnoreCase) ||
-                                 name.StartsWith(NewAppPrefix, StringComparison.OrdinalIgnoreCase)) &&
+                                 name.StartsWith(NewAppPrefix, StringComparison.OrdinalIgnoreCase) ||
+                                 name.StartsWith(ImportedAppPrefix, StringComparison.OrdinalIgnoreCase)) &&
                                 string.Equals(app, appPath, StringComparison.OrdinalIgnoreCase))
                             {
                                 names.Add(name);
@@ -520,6 +522,12 @@ namespace AutoScope.Services
 
         public const string NewIpPrefix = "AS-BLOCK-IP ";
         public const string NewAppPrefix = "AS-BLOCK-APP ";
+        // AutoCommand's block-rule prefixes, adopted at migration (see
+        // MigrationService): rules created before AutoScope stay visible,
+        // toggleable and covered by the panic button, managed in place —
+        // AutoScope itself never creates rules with these names.
+        public const string ImportedIpPrefix = "AC-BLOCK-IP ";
+        public const string ImportedAppPrefix = "AC-BLOCK-APP ";
         private static readonly string[] LegacyIpPrefix = { "AutoScope IP Block - " };
         private static readonly string[] LegacyAppPrefix = { "AutoScope Process Block - " };
 
@@ -546,7 +554,10 @@ namespace AutoScope.Services
         private static string ParseIpTarget(string name)
         {
             string prefix = name.StartsWith(NewIpPrefix, StringComparison.OrdinalIgnoreCase)
-                ? NewIpPrefix : LegacyIpPrefix[0];
+                ? NewIpPrefix
+                : name.StartsWith(ImportedIpPrefix, StringComparison.OrdinalIgnoreCase)
+                    ? ImportedIpPrefix
+                    : LegacyIpPrefix[0];
             int cut = name.IndexOf('(');
             return (cut > 0 ? name.Substring(prefix.Length, cut - prefix.Length)
                             : name.Substring(prefix.Length)).Trim();
@@ -562,6 +573,7 @@ namespace AutoScope.Services
             try
             {
                 if (name.StartsWith(NewIpPrefix, StringComparison.OrdinalIgnoreCase) ||
+                    name.StartsWith(ImportedIpPrefix, StringComparison.OrdinalIgnoreCase) ||
                     name.StartsWith(LegacyIpPrefix[0], StringComparison.OrdinalIgnoreCase))
                     return Services.IpClassifier.IsMicrosoftInfra(ParseIpTarget(name));
                 string app = rule.ApplicationName ?? "";
@@ -588,6 +600,8 @@ namespace AutoScope.Services
                 if ((int)rule.Action != 0) return false; // Block only
                 return name.StartsWith(NewIpPrefix, StringComparison.OrdinalIgnoreCase)
                     || name.StartsWith(NewAppPrefix, StringComparison.OrdinalIgnoreCase)
+                    || name.StartsWith(ImportedIpPrefix, StringComparison.OrdinalIgnoreCase)
+                    || name.StartsWith(ImportedAppPrefix, StringComparison.OrdinalIgnoreCase)
                     || name.StartsWith(LegacyIpPrefix[0], StringComparison.OrdinalIgnoreCase)
                     || name.StartsWith(LegacyAppPrefix[0], StringComparison.OrdinalIgnoreCase);
             }
@@ -711,6 +725,7 @@ namespace AutoScope.Services
                         .Select(t => new[]
                         {
                             $"{NewIpPrefix}{t.key} (",
+                            $"{ImportedIpPrefix}{t.key} (",
                             $"{LegacyIpPrefix[0]}{t.key} ("
                         })
                         .SelectMany(p => p)
@@ -727,6 +742,7 @@ namespace AutoScope.Services
                             if (!IsOurBlock(rule, out string name)) continue;
 
                             bool isIpRule = name.StartsWith(NewIpPrefix, StringComparison.OrdinalIgnoreCase) ||
+                                            name.StartsWith(ImportedIpPrefix, StringComparison.OrdinalIgnoreCase) ||
                                             name.StartsWith(LegacyIpPrefix[0], StringComparison.OrdinalIgnoreCase);
                             if (isIpRule)
                             {
@@ -772,6 +788,7 @@ namespace AutoScope.Services
 
                             BlockedTarget t = null;
                             if (name.StartsWith(NewIpPrefix, StringComparison.OrdinalIgnoreCase) ||
+                                name.StartsWith(ImportedIpPrefix, StringComparison.OrdinalIgnoreCase) ||
                                 name.StartsWith(LegacyIpPrefix[0], StringComparison.OrdinalIgnoreCase))
                             {
                                 string ip = ParseIpTarget(name);
