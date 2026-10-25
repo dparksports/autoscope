@@ -12,6 +12,8 @@
     <AssemblyName>AutoScope</AssemblyName>
     <Product>AutoScope</Product>
     <Version>0.1.0</Version>
+    <!-- clean version string on the status bar / serverInfo -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>app_icon.ico</ApplicationIcon>
     <Platforms>x64</Platforms>
@@ -24,8 +26,6 @@
     <EnableMsixTooling>true</EnableMsixTooling>
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
 
   <ItemGroup>

@@ -8,10 +8,9 @@
     <RootNamespace>AutoScope</RootNamespace>
     <AssemblyName>AutoScope.Core</AssemblyName>
     <Product>AutoScope</Product>
+    <Version>0.1.0</Version>
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
 
   <ItemGroup>
