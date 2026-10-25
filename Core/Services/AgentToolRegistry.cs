@@ -9,6 +9,8 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using SvchostAnalyzer.Core;
 
+using AutoScope.Engines.Diagnosis;
+
 namespace AutoScope.Services
 {
     /// <summary>
@@ -779,7 +781,8 @@ namespace AutoScope.Services
             if (string.IsNullOrEmpty(host)) return "Missing 'host' — the hostname to diagnose.";
             int minutes = Math.Clamp(a["minutes"]?.GetValue<int>() ?? 1440, 1, 60 * 24 * 30);
 
-            var rows = TransmissionsArchiveService.Read(4000, null, null, DateTime.UtcNow.AddMinutes(-minutes));
+            var rows = TransmissionsArchiveService.Read(4000, null, null, DateTime.UtcNow.AddMinutes(-minutes))
+                .Select(r => new AutoScope.Engines.Core.TrafficRow(r.TsUtc, r.Pid, r.Image, r.ProcessDisplay, r.RemoteIp, r.RemotePort, r.Sni, r.ClientBytes, r.ServerBytes)).ToList();
             var siteRows = rows.Where(r => string.Equals(r.Sni, host, StringComparison.OrdinalIgnoreCase)).ToList();
             var all = SiteFingerprintService.AllFingerprints(rows);
             var fingerprint = SiteFingerprintService.Fingerprint(
@@ -791,7 +794,7 @@ namespace AutoScope.Services
                 .ToList();
             if (controls.Count == 0) controls = new List<string> { "example.com" };
 
-            SiteProbeService.SiteProbeReport report;
+            SiteProbeReport report;
             try
             {
                 report = SiteProbeService.Shared.RunAsync(
@@ -808,7 +811,7 @@ namespace AutoScope.Services
             // page's other hosts silently blocked during this browser's
             // recorded visits? Blocked connects carry no hostname, so only
             // this join can see them. Degrades to null, never throws.
-            DependencyBlockService.Report dep = null;
+            AutoScope.Engines.Diagnosis.Report dep = null;
             try
             {
                 BlockHitFeedService.Instance.Start();
@@ -817,7 +820,7 @@ namespace AutoScope.Services
             }
             catch { dep = null; }
 
-            var verdict = SiteVerdictService.Decide(fingerprint, report, dep);
+            var verdict = SiteVerdict.Decide(fingerprint, report, dep);
 
             var edgeArr = new JsonArray();
             foreach (var e in report.Edges)

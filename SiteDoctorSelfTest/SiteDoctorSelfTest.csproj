@@ -1,32 +1,25 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Self-test for the "Why is this site slow?" pipeline: compiles the
-       app's sources directly, so what runs here is byte-identical to what
-       ships in AutoScope. Excluded from the app build (AutoScope.csproj
-       Compile Remove, like NetWatchSelfTest).
+  <!-- Self-test for the "Why is this site slow?" pipeline, now validating the
+       F# ENGINES: a C# harness consuming Engines.Diagnosis directly — the
+       C#-consumes-F# interop contract is part of what's under test.
 
-       Offline sections drive the fingerprint engine with synthetic archive
-       records and the verdict rules with synthetic probe reports. The one
-       LIVE section binds loopback listeners (no admin, no external network):
-       a TLS server that answers handshakes, and a "black hole" that accepts
-       TCP and never replies — the exact failure shape the dual-hello probe
-       exists to detect, proven detectable at the source. -->
+       Offline sections drive the fingerprint engine with synthetic rows and
+       the verdict rules with synthetic probe reports. The one LIVE section
+       binds loopback listeners (no admin, no external network): a TLS server
+       that answers handshakes, and a "black hole" that accepts TCP and never
+       replies — the exact failure shape the dual-hello probe exists to
+       detect, proven detectable at the source. -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>SiteDoctorSelfTest</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="../Core/Models/TransmissionRecord.cs" />
-    <Compile Include="../Core/Services/SiteFingerprintService.cs" />
-    <Compile Include="../Core/Services/SiteProbeService.cs" />
-    <Compile Include="../Core/Services/SiteVerdictService.cs" />
-    <!-- The pure core only — the live half (DependencyBlockService.Live.cs)
-         drags the feed/archive services and is exercised by the app itself. -->
-    <Compile Include="../Core/Services/DependencyBlockService.cs" />
+    <ProjectReference Include="..\Engines\Engines.Diagnosis\Engines.Diagnosis.fsproj" />
   </ItemGroup>
 
 </Project>

@@ -8,5 +8,9 @@
   <Folder Name="/Core/">
     <Project Path="Core/AutoScope.Core.csproj" />
   </Folder>
+  <Folder Name="/Engines/">
+    <Project Path="Engines/Engines.Core/Engines.Core.fsproj" />
+    <Project Path="Engines/Engines.Diagnosis/Engines.Diagnosis.fsproj" />
+  </Folder>
   <Project Path="SiteDoctorSelfTest/SiteDoctorSelfTest.csproj" />
 </Solution>

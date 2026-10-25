@@ -22,4 +22,8 @@
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Engines\Engines.Core\Engines.Core.fsproj" />
+    <ProjectReference Include="..\Engines\Engines.Diagnosis\Engines.Diagnosis.fsproj" />
+  </ItemGroup>
 </Project>

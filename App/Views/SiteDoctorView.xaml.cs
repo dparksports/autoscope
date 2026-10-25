@@ -8,6 +8,8 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Windows.UI;
 using AutoScope.Services;
+using AutoScope.Engines.Core;
+using AutoScope.Engines.Diagnosis;
 
 namespace AutoScope.Views
 {
@@ -67,10 +69,10 @@ namespace AutoScope.Views
         {
             try
             {
-                var rows = TransmissionsArchiveService.Read(max: 2000,
-                    sinceUtc: DateTime.UtcNow - TimeSpan.FromHours(24));
-                _controlPool = SiteFingerprintService.TopHosts(rows, 25);
-                _browsers = SiteFingerprintService.BrowsersSeen(rows);
+                var tRows = ToEngineRows(TransmissionsArchiveService.Read(max: 2000,
+                    sinceUtc: DateTime.UtcNow - TimeSpan.FromHours(24)));
+                _controlPool = SiteFingerprintService.TopHosts(tRows, 25);
+                _browsers = SiteFingerprintService.BrowsersSeen(tRows);
 
                 BrowserFilterBox.SelectionChanged -= BrowserFilter_SelectionChanged; // rebuild, don't retrigger
                 BrowserFilterBox.Items.Clear();
@@ -82,12 +84,12 @@ namespace AutoScope.Views
 
                 ApplySuggestions();
 
-                var all = SiteFingerprintService.AllFingerprints(rows);
+                var all = SiteFingerprintService.AllFingerprints(tRows);
                 int baseline = SiteFingerprintService.BaselineEdgeCount(all);
                 var struggling = all.Values
                     .Where(f => f.Conversations >= SiteFingerprintService.MinConversations)
                     .Select(f => SiteFingerprintService.Fingerprint(
-                        rows.Where(r => string.Equals(r.Sni, f.Host, StringComparison.OrdinalIgnoreCase)).ToList(),
+                        tRows.Where(r => string.Equals(r.Sni, f.Host, StringComparison.OrdinalIgnoreCase)).ToList(),
                         baseline))
                     .Where(f => f.LooksStruggling)
                     .OrderByDescending(f => f.Conversations)
@@ -158,8 +160,8 @@ namespace AutoScope.Views
             IEnumerable<string> tail;
             try
             {
-                var rows = TransmissionsArchiveService.Read(max: 2000,
-                    sinceUtc: DateTime.UtcNow - TimeSpan.FromHours(24));
+                var rows = ToEngineRows(TransmissionsArchiveService.Read(max: 2000,
+                    sinceUtc: DateTime.UtcNow - TimeSpan.FromHours(24)));
                 tail = filter == "★ Pinned sites"
                     ? Enumerable.Empty<string>()
                     : SiteFingerprintService.TopHosts(rows, 25,
@@ -237,8 +239,8 @@ namespace AutoScope.Views
             try
             {
                 // Passive half: everything the archive knows about this host.
-                var rows = TransmissionsArchiveService.Read(max: 4000,
-                    sinceUtc: DateTime.UtcNow - TimeSpan.FromHours(24));
+                var rows = ToEngineRows(TransmissionsArchiveService.Read(max: 4000,
+                    sinceUtc: DateTime.UtcNow - TimeSpan.FromHours(24)));
                 var siteRows = rows
                     .Where(r => string.Equals(r.Sni, host, StringComparison.OrdinalIgnoreCase))
                     .ToList();
@@ -272,7 +274,7 @@ namespace AutoScope.Views
                     SiteProbeService.Shared.RunAsync(host, extraEdges, controls, progress, ct), ct);
 
                 var dependency = await depTask;
-                var verdict = SiteVerdictService.Decide(fingerprint, report, dependency);
+                var verdict = SiteVerdict.Decide(fingerprint, report, dependency);
                 MarkAutoCommandBlocked(verdict, report, dependency);
                 ShowVerdict(verdict, report);
                 ProgressText.Text =
@@ -296,24 +298,24 @@ namespace AutoScope.Views
             }
         }
 
-        private void ShowVerdict(SiteVerdictService.Verdict verdict, SiteProbeService.SiteProbeReport report)
+        private void ShowVerdict(Verdict verdict, SiteProbeReport report)
         {
             VerdictHeadline.Text = verdict.Headline;
             VerdictNextStep.Text = "→ " + verdict.NextStep;
 
             (Brush bg, Brush border, Brush fg) = verdict.Kind switch
             {
-                SiteVerdictService.VerdictKind.Blocked =>
+                VerdictKind.Blocked =>
                     (Hex("#3A1414"), Hex("#E5534B"), Hex("#FF8A80")),
-                SiteVerdictService.VerdictKind.DependencyBlocked =>
+                VerdictKind.DependencyBlocked =>
                     (Hex("#3A1414"), Hex("#E5534B"), Hex("#FF8A80")),
-                SiteVerdictService.VerdictKind.LocalTlsBroken =>
+                VerdictKind.LocalTlsBroken =>
                     (Hex("#3A1414"), Hex("#E5534B"), Hex("#FF8A80")),
-                SiteVerdictService.VerdictKind.HandshakeDropping =>
+                VerdictKind.HandshakeDropping =>
                     (Hex("#3A2E14"), Hex("#E5A631"), Hex("#E5A631")),
-                SiteVerdictService.VerdictKind.Steering =>
+                VerdictKind.Steering =>
                     (Hex("#14243A"), Hex("#4A9EFF"), Hex("#7FB8FF")),
-                SiteVerdictService.VerdictKind.FarAway =>
+                VerdictKind.FarAway =>
                     (Hex("#2E1A3A"), Hex("#B07CE5"), Hex("#CDA9F0")),
                 _ => (Hex("#122A1A"), Hex("#3FB950"), Hex("#7EE2A8")),
             };
@@ -341,9 +343,9 @@ namespace AutoScope.Views
         /// the login-failure shape where the site is fine but an address the
         /// page depends on was silently blocked mid-visit.
         /// </summary>
-        private void MarkAutoCommandBlocked(SiteVerdictService.Verdict verdict,
-            SiteProbeService.SiteProbeReport report,
-            DependencyBlockService.Report dependency)
+        private void MarkAutoCommandBlocked(Verdict verdict,
+            SiteProbeReport report,
+            Report dependency)
         {
             try
             {
@@ -358,7 +360,7 @@ namespace AutoScope.Views
                     .Distinct()
                     .Where(IsBlocked)
                     .ToList();
-                var deps = (dependency?.InWindow ?? new List<DependencyBlockService.Hit>())
+                var deps = (dependency?.InWindow ?? new List<Hit>())
                     .Select(h => h.Ip)
                     .Where(ip => !string.IsNullOrEmpty(ip))
                     .Distinct(System.StringComparer.OrdinalIgnoreCase)
@@ -435,6 +437,13 @@ namespace AutoScope.Views
                 UnblockBtn.IsEnabled = true;
             }
         }
+
+        /// <summary>App record → engine row: the one place the UI model
+        /// crosses into the F# engines.</summary>
+        private static List<TrafficRow> ToEngineRows(
+            System.Collections.Generic.List<AutoScope.Models.TransmissionRecord> rows) =>
+            rows.Select(r => new TrafficRow(r.TsUtc, r.Pid, r.Image, r.ProcessDisplay,
+                r.RemoteIp, r.RemotePort, r.Sni, r.ClientBytes, r.ServerBytes)).ToList();
 
         // WinUI port: WPF BrushConverter does not exist — parse #RRGGBB directly
         private static Brush Hex(string hex)
