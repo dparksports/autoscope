@@ -156,10 +156,19 @@ namespace AutoScope.Views
             _sysmonService.OnNewConnectionTracked += AddToUi;
 
             // WinUI port of Popup StaysOpen="False": the DataGrid marks
-            // pointer presses handled, so the XAML-wired handler never fired
-            // — register for handled events too (any press anywhere closes).
-            LayoutRoot.AddHandler(UIElement.PointerPressedEvent,
-                LayoutRoot_PointerPressed, handledEventsToo: true);
+            // pointer presses handled, so a XAML-wired bubbling handler never
+            // fired — register for handled events too (any press anywhere
+            // closes). The delegate MUST be an explicit PointerEventHandler:
+            // a bare method group fails WinRT marshaling (InvalidCastException
+            // — the v0.1.4 crash that zeroed both counters). Cosmetic
+            // feature, wrapped so it can never abort Loaded again.
+            try
+            {
+                LayoutRoot.AddHandler(UIElement.PointerPressedEvent,
+                    new Microsoft.UI.Xaml.Input.PointerEventHandler(LayoutRoot_PointerPressed),
+                    handledEventsToo: true);
+            }
+            catch { /* light-dismiss unavailable; popups still close via buttons */ }
 
             _snifferService.OnError += ShowError;
 
