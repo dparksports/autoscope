@@ -1,0 +1,153 @@
+<Page x:Class="AutoScope.Views.SettingsView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      NavigationCacheMode="Required"
+      Loaded="Page_Loaded">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,24">
+            <TextBlock Text="Settings" Style="{ThemeResource PageHeader}"/>
+            <TextBlock Text="Configure AutoScope preferences and startup behavior."
+                       Foreground="{ThemeResource TextSecondaryBrush}" FontSize="12" Margin="0,-12,0,0"/>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+
+                <!-- Unblock (SmartScreen / Smart App Control) -->
+                <Border Style="{ThemeResource CardPanel}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Unblock (SmartScreen / Smart App Control)" Style="{ThemeResource SectionHeader}"/>
+
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,8">
+                            <Button x:Name="UnblockAppBtn" Content="🔓 Unblock this app's files" Style="{ThemeResource PrimaryButton}"
+                                    Click="UnblockAppBtn_Click" Margin="0,0,8,0"/>
+                            <Button x:Name="UnblockFolderBtn" Content="📂 Unblock another folder…" Style="{ThemeResource PrimaryButton}"
+                                    Click="UnblockFolderBtn_Click" Margin="0,0,12,0"/>
+                            <TextBlock x:Name="UnblockStatusText" Text="" VerticalAlignment="Center"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" FontSize="11" TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <TextBlock Grid.Row="2" Text="Windows marks every file extracted from a downloaded zip with the 'Mark-of-the-Web' — on Smart App Control machines that mark is what produces 'blocked: dangerous file from the web'. This removes the mark from this app's folder (or any folder you pick, e.g. a fresh zip extraction) so unsigned AutoScope launches normally. Files are never modified — only the download marker is deleted."
+                                   Foreground="{ThemeResource TextSecondaryBrush}" FontSize="11" TextWrapping="Wrap"/>
+                    </Grid>
+                </Border>
+
+                <!-- Startup Behavior -->
+                <Border Style="{ThemeResource CardPanel}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Startup Behavior" Style="{ThemeResource SectionHeader}"/>
+
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,8">
+                            <CheckBox x:Name="LaunchOnStartupCheck"
+                                      Content="Launch when user logs in"
+                                      Checked="LaunchOnStartupCheck_Checked"
+                                      Unchecked="LaunchOnStartupCheck_Unchecked"/>
+                        </StackPanel>
+
+                        <TextBlock Grid.Row="2" Text="This creates a Scheduled Task to run AutoScope with highest privileges upon user login, bypassing the UAC prompt."
+                                   Foreground="{ThemeResource TextSecondaryBrush}" FontSize="11" TextWrapping="Wrap"/>
+                    </Grid>
+                </Border>
+
+                <!-- Network Adapter Security -->
+                <Border Style="{ThemeResource CardPanel}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Network Adapter Security" Style="{ThemeResource SectionHeader}"/>
+
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,8">
+                            <CheckBox x:Name="AutoMitigateAdaptersCheck"
+                                      Content="Automatically delete active SSTP and Kernel Debug adapters"
+                                      Checked="AutoMitigateAdaptersCheck_Checked"
+                                      Unchecked="AutoMitigateAdaptersCheck_Unchecked"/>
+                        </StackPanel>
+
+                        <TextBlock Grid.Row="2" Text="If disabled, you will be notified when an unauthorized adapter becomes active and given the option to block it."
+                                   Foreground="{ThemeResource TextSecondaryBrush}" FontSize="11" TextWrapping="Wrap"/>
+                    </Grid>
+                </Border>
+
+                <!-- Security Check Rate -->
+                <Border Style="{ThemeResource CardPanel}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Security Check Rate" Style="{ThemeResource SectionHeader}"/>
+
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,8">
+                            <TextBlock Text="Background check interval:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <ComboBox x:Name="CheckRateCombo" Width="200"
+                                      SelectionChanged="CheckRateCombo_SelectionChanged">
+                                <ComboBoxItem Content="Every 60 seconds" Tag="60"/>
+                                <ComboBoxItem Content="Every 30 seconds" Tag="30"/>
+                                <ComboBoxItem Content="Every 10 seconds" Tag="10"/>
+                                <ComboBoxItem Content="Every 6 seconds" Tag="6"/>
+                                <ComboBoxItem Content="Every 5 seconds (default)" Tag="5"/>
+                                <ComboBoxItem Content="Every 3 seconds" Tag="3"/>
+                                <ComboBoxItem Content="Every second" Tag="1"/>
+                            </ComboBox>
+                        </StackPanel>
+
+                        <TextBlock Grid.Row="2" Text="How often the fast security checks run (SSTP service, hosted network, adapter events). Heavier scans (kernel debug, hosts file, privileged tasks, firewall drift) keep fixed 30–60 second cadences. Takes effect immediately; persisted across restarts."
+                                   Foreground="{ThemeResource TextSecondaryBrush}" FontSize="11" TextWrapping="Wrap"/>
+                    </Grid>
+                </Border>
+
+                <!-- Application Information -->
+                <Border Style="{ThemeResource CardPanel}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Application Information" Style="{ThemeResource SectionHeader}"/>
+
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,0">
+                            <TextBlock Text="Version:" Foreground="{ThemeResource TextSecondaryBrush}" Width="150" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="VersionValueText" Text="…" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- Footnote -->
+                        <StackPanel Grid.Row="2" Margin="0,16,0,0">
+                            <TextBlock Text="AutoScope — engine ported from AutoCommand (Apache 2.0)"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" FontSize="11"/>
+                            <TextBlock Text="Apache License 2.0" Margin="0,10,0,0"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" FontSize="11"/>
+                            <TextBlock Text="© 2026 Dan Park, magicpoint.ai" Margin="0,10,0,0"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" FontSize="11" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

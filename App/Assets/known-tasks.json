@@ -1,0 +1,35 @@
+{
+  "\\Microsoft\\Windows\\LanguageComponentsInstaller\\Installation": {
+    "title": "Language Components Installer",
+    "explanation": "Installs pending language features-on-demand (typing, spellcheck, handwriting, OCR, speech) for the user's language list. Runs 15 minutes after each logon and repeats daily until nothing is pending (trigger id 'PeriodicInstallationAfterLogonUntilDone'). A sub-second run ending in return code 0 means nothing was pending - the check itself was the whole visit.",
+    "note": "'Install $(Arg0)' with the placeholder unexpanded is normal: the argument is only substituted when something starts the task with a parameter; a trigger-fired start has none."
+  },
+  "\\Microsoft\\Windows\\LanguageComponentsInstaller\\ReconcileLanguageResources": {
+    "title": "Language Resources Reconciliation",
+    "explanation": "Reconciles per-user language resources after logon or language-list changes (COM handler 'LanguageOverlayServer'). Routine logon-time housekeeping; return code 0 within a second is the normal outcome."
+  },
+  "\\Microsoft\\Windows\\CloudRestore\\Backup": {
+    "title": "Windows settings backup (cloud restore)",
+    "explanation": "Backs up Windows settings and the Microsoft Store app list for device replacement and recovery scenarios (Windows settings backup). The $(Arg0) placeholder receives the backup payload when the task is invoked with one."
+  },
+  "\\Microsoft\\Windows\\Bluetooth\\UninstallDeviceTask": {
+    "title": "Bluetooth device uninstall",
+    "explanation": "Runs BthUdTask.exe to clean up a Bluetooth device; $(Arg0) receives the device identifier when the task is invoked with a parameter."
+  },
+  "\\Microsoft\\Windows\\Maps\\MapsToastTask": {
+    "title": "Maps update/toast check",
+    "explanation": "Checks for Maps data updates and shows related notifications. The $(Arg0)..$(Arg7) placeholders carry invocation parameters and are normally seen unexpanded."
+  },
+  "\\Microsoft\\Windows\\Workplace Join\\Automatic-Device-Join": {
+    "title": "Automatic workplace join",
+    "explanation": "Registers the device at logon via dsregcmd (workplace / Microsoft Entra join). Commonly Disabled on home machines - that state is fine."
+  },
+  "\\Microsoft\\Windows\\Shell\\FamilySafetyRefreshTask": {
+    "title": "Family Safety refresh",
+    "explanation": "Refreshes Microsoft Family Safety settings and activity state for the signed-in user."
+  },
+  "\\Microsoft\\Windows\\Flighting\\OneSettings\\RefreshCache": {
+    "title": "OneSettings cache refresh",
+    "explanation": "Fetches OneSettings remote config (feature flags, experiment cohorts) as SYSTEM via a COM handler. Stock cadence is a repeating time trigger (~3h20m stock, ~3h36m on current builds) with a 1h random delay plus WNF state-change triggers - roughly 20-40 runs a day. Runs of a second or two ending in return code 0 are normal. The OneSettingsCadence CLI can lower this cadence and restore stock afterwards."
+  }
+}

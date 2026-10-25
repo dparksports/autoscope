@@ -1,0 +1,136 @@
+<Page x:Class="AutoScope.Views.SiteDoctorView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      NavigationCacheMode="Required"
+      Loaded="Page_Loaded" Unloaded="Page_Unloaded">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock Text="Site Doctor" Style="{ThemeResource PageHeader}"/>
+            <TextBlock Text="Slow, failing, or can't sign in — one 60-second check that measures, compares and explains. It never changes anything on your PC"
+                       Foreground="{ThemeResource TextSecondaryBrush}" FontSize="12" Margin="0,-12,0,0"/>
+        </StackPanel>
+
+        <!-- Hints (from recorded traffic + block feed, refreshed on load) -->
+        <StackPanel Grid.Row="1" Margin="0,0,0,12">
+            <Border x:Name="StruggleHint" Background="{ThemeResource SurfaceAltBrush}" CornerRadius="4"
+                    Padding="12,8" Margin="0,0,0,6" Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock x:Name="StruggleHintText" VerticalAlignment="Center" FontSize="12"
+                               Foreground="{ThemeResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                    <ItemsControl x:Name="StruggleHintHosts" Margin="12,0,0,0" ItemsSource="{Binding}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <Button Content="{Binding}" Style="{ThemeResource PrimaryButton}" FontSize="11"
+                                        Padding="8,2" Margin="0,0,8,0" Click="StruggleHost_Click"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+            <Border x:Name="BlockHitHint" Background="{ThemeResource SurfaceAltBrush}" CornerRadius="4"
+                    Padding="12,8" Visibility="Collapsed">
+                <TextBlock x:Name="BlockHitHintText" FontSize="12" TextWrapping="Wrap"
+                           Foreground="{ThemeResource TextPrimaryBrush}"/>
+            </Border>
+        </StackPanel>
+
+        <!-- Input row -->
+        <Grid Grid.Row="2" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <ComboBox x:Name="HostBox" IsEditable="True" Height="30"
+                      ToolTipService.ToolTip="Type any site name, pick one from your pinned ★ list, or pick one your selected browser has actually been visiting."/>
+            <Button x:Name="PinBtn" Grid.Column="1" Content="☆ Pin" Style="{ThemeResource PrimaryButton}"
+                    Height="30" Margin="8,0,0,0" Padding="10,0" Click="PinBtn_Click"
+                    ToolTipService.ToolTip="Pin/unpin the typed site to the top of the picker (kept on this PC, never a built-in list)."/>
+            <Button x:Name="RunBtn" Grid.Column="2" Content="▶ Run 60-second check" Style="{ThemeResource PrimaryButton}"
+                    Height="30" Margin="8,0,0,0" Padding="14,0" Click="RunBtn_Click"
+                    ToolTipService.ToolTip="Sends a small, capped set of connections (about 21 operations, every one listed in the log below) and reads your recorded traffic. Changes nothing."/>
+            <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="12,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="Sites from:" VerticalAlignment="Center" FontSize="11"
+                           Foreground="{ThemeResource TextSecondaryBrush}"/>
+                <ComboBox x:Name="BrowserFilterBox" Height="26" Margin="6,0,0,0" MinWidth="120"
+                          SelectionChanged="BrowserFilter_SelectionChanged"
+                          ToolTipService.ToolTip="Whose traffic fills the picker: all apps, only your pinned sites, or the sites one of your browsers actually visits. Built from what THIS PC recorded — no built-in site list."/>
+            </StackPanel>
+            <TextBlock x:Name="ProgressText" Grid.Column="4" VerticalAlignment="Center" Margin="14,0,0,0" FontSize="12"
+                       Foreground="{ThemeResource TextSecondaryBrush}" TextTrimming="CharacterEllipsis"/>
+        </Grid>
+
+        <!-- Verdict -->
+        <Border x:Name="VerdictPanel" Grid.Row="3" CornerRadius="4" BorderThickness="1" Padding="14,10"
+                Margin="0,0,0,12" Visibility="Collapsed">
+            <StackPanel>
+                <TextBlock x:Name="VerdictHeadline" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap"
+                           Foreground="{ThemeResource TextPrimaryBrush}"/>
+                <TextBlock x:Name="VerdictNextStep" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"
+                           Foreground="{ThemeResource TextSecondaryBrush}"/>
+                <Button x:Name="UnblockBtn" Content="🚫 Unblock these addresses" Style="{ThemeResource PrimaryButton}"
+                        FontSize="12" Padding="12,4" Margin="0,10,0,0" HorizontalAlignment="Left"
+                        Visibility="Collapsed" Click="UnblockBtn_Click"
+                        ToolTipService.ToolTip="Removes only AutoScope's own AS-BLOCK firewall rules for the listed addresses — fully reversible, and shown with rule counts before anything is removed."/>
+            </StackPanel>
+        </Border>
+
+        <!-- The math + everything we sent -->
+        <Grid Grid.Row="4">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Expander x:Name="MathExpander" Header="Show the math" FontSize="12" IsExpanded="False" Visibility="Collapsed">
+                <Border Background="{ThemeResource SurfaceAltBrush}" CornerRadius="4" Padding="10,6" Margin="0,6,0,0">
+                    <ItemsControl x:Name="EvidenceList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <TextBlock Text="{Binding}" FontFamily="Consolas" FontSize="11" Padding="0,1"
+                                           Foreground="{ThemeResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Border>
+            </Expander>
+            <Expander x:Name="OpsExpander" Grid.Row="1" Header="Everything this check sent (operation log)" FontSize="12"
+                      IsExpanded="False" Visibility="Collapsed" Margin="0,6,0,0">
+                <Border Background="{ThemeResource SurfaceAltBrush}" CornerRadius="4" Padding="10,6" Margin="0,6,0,0">
+                    <!-- WinUI port: ItemsControl has no scroll viewer of its
+                         own, so the list is wrapped in one explicitly -->
+                    <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl x:Name="OpsList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <TextBlock Text="{Binding}" FontFamily="Consolas" FontSize="11" Padding="0,1"
+                                               Foreground="{ThemeResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+            </Expander>
+        </Grid>
+
+        <TextBlock Grid.Row="5" Text="Looking changes nothing — this check reads recorded traffic and sends a handful of handshakes, all listed above."
+                   Foreground="{ThemeResource TextSecondaryBrush}" FontSize="11" VerticalAlignment="Bottom"/>
+    </Grid>
+</Page>

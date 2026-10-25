@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- AutoScope.Core — the engine layer ported from AutoCommand
+       (Services/Helpers/Models + SecurityEnforcer). UI-framework-free;
+       the WinUI app in ..\App is the only front end. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <RootNamespace>AutoScope</RootNamespace>
+    <AssemblyName>AutoScope.Core</AssemblyName>
+    <Product>AutoScope</Product>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Management" Version="10.0.13" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.13" />
+    <!-- Models ported from WPF carry UI types (Brush/Visibility); in WinUI
+         those are Windows App SDK projections, so Core references the same
+         package the app does. -->
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
+  </ItemGroup>
+
+</Project>

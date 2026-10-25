@@ -1,0 +1,93 @@
+<Page x:Class="AutoScope.Views.BeMyGuestView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      NavigationCacheMode="Required"
+      Loaded="Page_Loaded"
+      Unloaded="Page_Unloaded">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,24">
+            <TextBlock Text="Be My Guest" Style="{ThemeResource PageHeader}"/>
+            <TextBlock Text="Let an AI assistant read this machine's security telemetry — by explicit consent, revocable in one click."
+                       Foreground="{ThemeResource TextSecondaryBrush}" FontSize="12" Margin="0,-12,0,0"/>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="0,0,15,20">
+
+                <!-- Session -->
+                <Border Style="{ThemeResource CardPanel}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Session" Style="{ThemeResource SectionHeader}"/>
+
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,8">
+                            <Button x:Name="StartAgentBtn" Content="▶ Start AI session" Style="{ThemeResource PrimaryButton}"
+                                    Click="StartAgentBtn_Click" Margin="0,0,8,0"/>
+                            <Button x:Name="StopAgentBtn" Content="⏹ Stop session" Style="{ThemeResource PrimaryButton}"
+                                    Click="StopAgentBtn_Click" Margin="0,0,12,0" IsEnabled="False"/>
+                            <TextBlock x:Name="AgentStatusText" Text="Session off." VerticalAlignment="Center"
+                                       Foreground="{ThemeResource TextSecondaryBrush}" FontSize="11"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="2">
+                            <CheckBox x:Name="AgentMutatingCheck" Content="Allow mutating actions (block IP, kill process, disable task) — every single action asks me first"
+                                      Foreground="{ThemeResource TextPrimaryBrush}" Margin="0,0,0,8"
+                                      Checked="AgentMutatingCheck_Changed" Unchecked="AgentMutatingCheck_Changed"/>
+                            <TextBlock Text="Start a session only while you want an AI assistant (ZCode, Claude, …) to read this machine's security telemetry. The session listens on 127.0.0.1 only, is protected by a per-session token that never appears in any config file, and ends when you stop it, close AutoScope, or its app exits. Read-only tools answer immediately; mutating tools ask on every action. What the assistant reads can be repeated by the assistant — that is the consent you are giving."
+                                       Foreground="{ThemeResource TextSecondaryBrush}" FontSize="11" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Connect an assistant -->
+                <Border Style="{ThemeResource CardPanel}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Connect an assistant" Style="{ThemeResource SectionHeader}"/>
+
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,8">
+                            <StackPanel x:Name="AgentClientsPanel" Orientation="Horizontal"/>
+                            <Button x:Name="CopyAgentConfigBtn" Content="Copy MCP config" Click="CopyAgentConfigBtn_Click" Padding="10,2" Margin="0,0,8,0"/>
+                            <Button x:Name="OpenAgentLogBtn" Content="Open activity log" Click="OpenAgentLogBtn_Click" Padding="10,2" Margin="0,0,12,0"/>
+                        </StackPanel>
+
+                        <TextBlock Grid.Row="2" Text="Registration writes the 'autoscope' MCP entry into the client's config — the client spawns a small asInvoker proxy (never this elevated app), and the proxy forwards into the running session. Tools answer with setup guidance whenever no session is active here."
+                                   Foreground="{ThemeResource TextSecondaryBrush}" FontSize="11" TextWrapping="Wrap"/>
+                    </Grid>
+                </Border>
+
+                <!-- Activity -->
+                <Border Style="{ThemeResource CardPanel}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Activity — every tool call, live" Style="{ThemeResource SectionHeader}"/>
+
+                        <ListBox Grid.Row="1" x:Name="AgentActivityList" Height="180" Margin="0,8,0,0" FontFamily="Consolas" FontSize="11"
+                                 Background="{ThemeResource SurfaceAltBrush}" Foreground="{ThemeResource TextPrimaryBrush}"
+                                 BorderBrush="{ThemeResource BorderBrush}"/>
+                    </Grid>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

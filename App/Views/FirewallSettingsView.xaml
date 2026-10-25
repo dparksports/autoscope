@@ -1,0 +1,121 @@
+<Page x:Class="AutoScope.Views.FirewallSettingsView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:converters="using:AutoScope.Converters"
+      xmlns:dg="using:CommunityToolkit.WinUI.UI.Controls"
+      NavigationCacheMode="Required"
+      Loaded="Page_Loaded">
+
+    <Page.Resources>
+        <converters:EnabledToColorConverter x:Key="EnabledToColor"/>
+        <converters:ActionToColorConverter x:Key="ActionToColor"/>
+        <!-- WinUI port: WPF ContextMenu on the DataGrid becomes a MenuFlyout
+             opened from RightTapped on a row -->
+        <MenuFlyout x:Name="RuleMenu">
+            <MenuFlyoutItem Text="Toggle Rule" Click="ToggleRule_Click"/>
+            <MenuFlyoutItem Text="Enable Entire Group" Click="EnableGroup_Click"/>
+            <MenuFlyoutItem Text="Disable Entire Group" Click="DisableGroup_Click"/>
+            <MenuFlyoutSeparator/>
+            <MenuFlyoutItem Text="Save to Config" Click="SaveToConfig_Click"/>
+        </MenuFlyout>
+    </Page.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Grid.Row="0" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="Advanced Firewall Settings" Style="{ThemeResource PageHeader}" Margin="0,0,0,4"/>
+                <TextBlock Text="Manage Windows Defender Firewall profiles and port rules via native COM APIs."
+                           Foreground="{ThemeResource TextSecondaryBrush}" FontSize="12"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Quick Profile:" Foreground="{ThemeResource TextPrimaryBrush}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <ComboBox x:Name="ProfileCombo" Width="340" Margin="0,0,8,0" SelectionChanged="ProfileCombo_SelectionChanged">
+                    <ComboBoxItem Content="Custom (Current)" IsSelected="True"/>
+                    <ComboBoxItem Content="Shields Up"
+                                  ToolTipService.ToolTip="Reset Windows Firewall to its default rule set (removes all custom rules, including AutoScope's AS-BLOCK rules), then disable every remaining rule — blocks all unsolicited incoming traffic."/>
+                    <ComboBoxItem Content="Shields Up + mDNS"
+                                  ToolTipService.ToolTip="Disables every grouped firewall rule, then re-enables only mDNS and Core Networking."/>
+                    <ComboBoxItem Content="Allow Discovery + Cast"/>
+                    <ComboBoxItem Content="Allow Sharing + Discovery + Remote Desktop"/>
+                    <ComboBoxItem Content="Allow Sharing + Discovery"/>
+                    <ComboBoxItem Content="Block Sharing + Discovery + Remote Desktop"/>
+                </ComboBox>
+                <Button x:Name="RefreshBtn" Content="↻ Refresh" Style="{ThemeResource PrimaryButton}" Click="RefreshBtn_Click"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- View Filter -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
+            <RadioButton x:Name="InboundRadio" Content="Inbound Rules" IsChecked="True"
+                         Foreground="{ThemeResource TextPrimaryBrush}" Margin="0,0,16,0"
+                         Checked="FilterChanged"/>
+            <RadioButton x:Name="OutboundRadio" Content="Outbound Rules"
+                         Foreground="{ThemeResource TextPrimaryBrush}" Margin="0,0,16,0"
+                         Checked="FilterChanged"/>
+            <TextBlock x:Name="RuleCountText" Text="" Foreground="{ThemeResource TextSecondaryBrush}"
+                       Margin="20,0,0,0" VerticalAlignment="Center" FontSize="11"/>
+            <Button x:Name="RebaselineBtn" Content="📌 Re-baseline" Margin="16,0,0,0"
+                    Style="{ThemeResource PrimaryButton}" Click="RebaselineBtn_Click"
+                    ToolTipService.ToolTip="Capture the current firewall state as the expected baseline. The Security Enforcer re-disables rules that drift from it (e.g. re-enabled after Windows Update)."/>
+            <Button x:Name="PauseEnforcementBtn" Content="⏸ Pause auto-fix (15 min)" Margin="12,0,0,0"
+                    Style="{ThemeResource PrimaryButton}" Click="PauseEnforcementBtn_Click"
+                    ToolTipService.ToolTip="Suspend baseline enforcement for 15 minutes while you edit rules externally (wf.msc / netsh). Re-baseline afterwards to adopt your changes."/>
+            <Button x:Name="RenameLegacyBtn" Content="✏️ Rename legacy blocks" Margin="12,0,0,0"
+                    Style="{ThemeResource PrimaryButton}" Click="RenameLegacyBtn_Click" IsEnabled="False"
+                    ToolTipService.ToolTip="Recreate AutoScope block rules still using the legacy 'AutoScope IP Block / Process Block' names under the current AS-BLOCK naming. Lossless: descriptions carry over, redundant inbound duplicates are removed, protection unchanged."/>
+            <TextBlock x:Name="BaselineStatusText" Text="" Foreground="{ThemeResource TextSecondaryBrush}"
+                       Margin="12,0,0,0" VerticalAlignment="Center" FontSize="11"/>
+            <ProgressBar x:Name="ProfileProgress" Width="120" Height="14" IsIndeterminate="True"
+                         Visibility="Collapsed" Margin="16,0,0,0" VerticalAlignment="Center"/>
+            <TextBlock x:Name="ProfileStatusText" Text="" Foreground="{ThemeResource TextSecondaryBrush}"
+                       FontStyle="Italic" FontSize="11" Margin="12,0,0,0" VerticalAlignment="Center"
+                       TextTrimming="CharacterEllipsis"/>
+        </StackPanel>
+
+        <!-- Rules Grid (WinUI port: flat list — the toolkit DataGrid has no
+             grouping, so the WPF group expanders are dropped; sort order is
+             unchanged. Enabled/Action use template columns because WinUI
+             styles cannot contain bindings.) -->
+        <dg:DataGrid Grid.Row="2" x:Name="RulesGrid" AutoGenerateColumns="False"
+                     RightTapped="RulesGrid_RightTapped">
+            <dg:DataGrid.Columns>
+                <dg:DataGridTemplateColumn Header="Enabled" Width="90">
+                    <dg:DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding EnabledDisplay}" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" Margin="12,0,4,0"
+                                       Foreground="{Binding Enabled, Converter={StaticResource EnabledToColor}}"/>
+                        </DataTemplate>
+                    </dg:DataGridTemplateColumn.CellTemplate>
+                </dg:DataGridTemplateColumn>
+                <dg:DataGridTemplateColumn Header="Action" Width="70">
+                    <dg:DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Action}" VerticalAlignment="Center"
+                                       Foreground="{Binding Action, Converter={StaticResource ActionToColor}}"/>
+                        </DataTemplate>
+                    </dg:DataGridTemplateColumn.CellTemplate>
+                </dg:DataGridTemplateColumn>
+                <dg:DataGridTextColumn Header="Name" Binding="{Binding DisplayName}" Width="*"/>
+                <dg:DataGridTextColumn Header="Group" Binding="{Binding DisplayGroup}" Width="150"/>
+                <dg:DataGridTextColumn Header="Protocol" Binding="{Binding Protocol}" Width="70"/>
+                <dg:DataGridTextColumn Header="Local Port" Binding="{Binding LocalPort}" Width="80"/>
+                <dg:DataGridTextColumn Header="Remote Address" Binding="{Binding RemoteAddress}" Width="120"/>
+                <dg:DataGridTextColumn Header="Profile" Binding="{Binding Profile}" Width="100"/>
+            </dg:DataGrid.Columns>
+        </dg:DataGrid>
+    </Grid>
+</Page>

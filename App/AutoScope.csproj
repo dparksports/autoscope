@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- AutoScope — native Windows app (WinUI 3 / Windows App SDK) porting six
+       AutoCommand tabs: Process Monitor, Site Doctor, Firewall, Blocks,
+       Be My Guest, Settings. Engines live in Core\AutoScope.Core.csproj
+       (copied from AutoCommand, Apache 2.0, © 2026 Dan Park). -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <RootNamespace>AutoScope</RootNamespace>
+    <AssemblyName>AutoScope</AssemblyName>
+    <Product>AutoScope</Product>
+    <Version>0.1.0</Version>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>app_icon.ico</ApplicationIcon>
+    <Platforms>x64</Platforms>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <UseWinUI>true</UseWinUI>
+    <!-- Unpackaged (zip-and-run, right-click → Run as administrator), same
+         deployment story as AutoCommand: no MSIX, no installer. -->
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
+    <!-- WinUI has no built-in DataGrid; the toolkit one replaces the WPF
+         DataGrid the AutoCommand views were written against. -->
+    <PackageReference Include="CommunityToolkit.WinUI.UI.Controls.DataGrid" Version="7.1.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Core\AutoScope.Core.csproj" />
+    <!-- The MCP client's spawn target: a tiny asInvoker console exe that
+         forwards stdio JSON-RPC to the running elevated app over loopback.
+         Built and deployed next to the app (Be My Guest installs a copy). -->
+    <ProjectReference Include="..\AgentProxy\AutoScope.AgentProxy.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Engine data files (read via AppContext.BaseDirectory\Assets) -->
+    <Content Include="Assets\known-tasks.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\telemetry_rules.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

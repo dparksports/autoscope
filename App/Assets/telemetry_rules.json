@@ -1,0 +1,101 @@
+{
+  "rules": [
+    {
+      "id": "ultralytics-sync",
+      "appName": "Ultralytics YOLO (Python)",
+      "category": "Python library",
+      "mechanism": "Sends anonymized usage statistics to Google Analytics at the end of predict/train/val/export runs, tied to a persistent install uuid (%APPDATA%\\Ultralytics\\settings.json). The switch is honored only when written as a JSON boolean — a quoted \"false\" reads back as ON.",
+      "scope": "User",
+      "riskNote": "Low — model training and inference are unaffected; this only disables the stats upload and Hub sync.",
+      "watchDomains": [ "google-analytics.com" ],
+      "detection": { "type": "file", "path": "%APPDATA%\\Ultralytics\\settings.json" },
+      "stateProbe": { "type": "json", "path": "%APPDATA%\\Ultralytics\\settings.json", "key": "sync", "offValues": [ "false" ], "valueType": "bool" },
+      "optOut": { "type": "json", "path": "%APPDATA%\\Ultralytics\\settings.json", "key": "sync", "value": "false", "valueType": "bool" },
+      "enforce": { "type": "hosts", "domains": [ "www.google-analytics.com" ] }
+    },
+    {
+      "id": "ultralytics-offline",
+      "appName": "Ultralytics YOLO (offline mode)",
+      "category": "Python library",
+      "mechanism": "YOLO_OFFLINE=1 makes the library skip all of its own network calls — usage statistics, package auto-install and version checks. Honored by the library itself; no settings file involved.",
+      "scope": "User — affects every new Python process",
+      "riskNote": "Low-medium — also disables auto-install and update checks; model weights must already be on disk.",
+      "watchDomains": [ "google-analytics.com", "ultralytics.com" ],
+      "detection": { "type": "file", "path": "%APPDATA%\\Ultralytics\\settings.json" },
+      "stateProbe": { "type": "env", "var": "YOLO_OFFLINE", "offValues": [ "1", "true" ] },
+      "optOut": { "type": "env", "var": "YOLO_OFFLINE", "value": "1" }
+    },
+    {
+      "id": "dotnet-cli-telemetry",
+      "appName": ".NET CLI (dotnet)",
+      "category": "Developer runtime",
+      "mechanism": "dotnet commands report usage data to Microsoft unless DOTNET_CLI_TELEMETRY_OPTOUT is set.",
+      "scope": "User",
+      "riskNote": "None — tooling behavior is identical with telemetry off.",
+      "watchDomains": [],
+      "detection": { "type": "file", "path": "%ProgramFiles%\\dotnet\\dotnet.exe" },
+      "stateProbe": { "type": "env", "var": "DOTNET_CLI_TELEMETRY_OPTOUT", "offValues": [ "1", "true" ] },
+      "optOut": { "type": "env", "var": "DOTNET_CLI_TELEMETRY_OPTOUT", "value": "1" }
+    },
+    {
+      "id": "powershell7-telemetry",
+      "appName": "PowerShell 7 (pwsh)",
+      "category": "Developer runtime",
+      "mechanism": "PowerShell 7 sends usage data to Microsoft unless POWERSHELL_TELEMETRY_OPTOUT is set.",
+      "scope": "User",
+      "riskNote": "None.",
+      "watchDomains": [],
+      "detection": { "type": "file", "path": "%ProgramFiles%\\PowerShell\\7\\pwsh.exe" },
+      "stateProbe": { "type": "env", "var": "POWERSHELL_TELEMETRY_OPTOUT", "offValues": [ "1", "true" ] },
+      "optOut": { "type": "env", "var": "POWERSHELL_TELEMETRY_OPTOUT", "value": "1" }
+    },
+    {
+      "id": "vscode-telemetry",
+      "appName": "Visual Studio Code",
+      "category": "Editor",
+      "mechanism": "VS Code sends usage and crash data unless telemetry.telemetryLevel is set to \"off\".",
+      "scope": "User",
+      "riskNote": "Low — only disables diagnostics collection.",
+      "watchDomains": [],
+      "detection": { "type": "file", "path": "%APPDATA%\\Code\\User\\settings.json" },
+      "stateProbe": { "type": "json", "path": "%APPDATA%\\Code\\User\\settings.json", "key": "telemetry.telemetryLevel", "offValues": [ "off" ] },
+      "optOut": { "type": "json", "path": "%APPDATA%\\Code\\User\\settings.json", "key": "telemetry.telemetryLevel", "value": "off" }
+    },
+    {
+      "id": "windows-diagnostic-data",
+      "appName": "Windows diagnostic data",
+      "category": "Operating system",
+      "mechanism": "Windows sends diagnostic data to Microsoft. The AllowTelemetry policy caps it: 1 = required/security only, 0 = security only (Enterprise). Absent = full default level.",
+      "scope": "Machine",
+      "riskNote": "Medium — lower levels reduce Microsoft-side diagnostics; some Windows features rely on diagnostic data.",
+      "watchDomains": [],
+      "detection": { "type": "os" },
+      "stateProbe": { "type": "registry", "regKey": "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection", "regName": "AllowTelemetry", "offValues": [ "1", "0" ] },
+      "optOut": { "type": "registry", "regKey": "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection", "regName": "AllowTelemetry", "value": "1", "kind": "dword" }
+    },
+    {
+      "id": "edge-metrics",
+      "appName": "Microsoft Edge",
+      "category": "Browser",
+      "mechanism": "Edge reports usage and diagnostic data unless the MetricsReportingEnabled policy disables it.",
+      "scope": "Machine",
+      "riskNote": "Low — browsing unaffected.",
+      "watchDomains": [],
+      "detection": { "type": "file", "path": "%ProgramFiles(x86)%\\Microsoft\\Edge\\Application\\msedge.exe" },
+      "stateProbe": { "type": "registry", "regKey": "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge", "regName": "MetricsReportingEnabled", "offValues": [ "0" ] },
+      "optOut": { "type": "registry", "regKey": "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge", "regName": "MetricsReportingEnabled", "value": "0", "kind": "dword" }
+    },
+    {
+      "id": "chrome-metrics",
+      "appName": "Google Chrome",
+      "category": "Browser",
+      "mechanism": "Chrome reports usage statistics to Google unless the MetricsReportingEnabled policy disables it.",
+      "scope": "Machine",
+      "riskNote": "Low — browsing unaffected.",
+      "watchDomains": [],
+      "detection": { "type": "file", "path": "%ProgramFiles%\\Google\\Chrome\\Application\\chrome.exe" },
+      "stateProbe": { "type": "registry", "regKey": "HKLM\\SOFTWARE\\Policies\\Google\\Chrome", "regName": "MetricsReportingEnabled", "offValues": [ "0" ] },
+      "optOut": { "type": "registry", "regKey": "HKLM\\SOFTWARE\\Policies\\Google\\Chrome", "regName": "MetricsReportingEnabled", "value": "0", "kind": "dword" }
+    }
+  ]
+}

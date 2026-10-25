@@ -1,0 +1,126 @@
+<Window x:Class="AutoScope.Views.ProcessTraceWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:services="using:AutoScope.Services"
+        Title="PID Inquiry">
+    <!-- WinUI port: WPF Window Width/Height/MinWidth/MinHeight/
+         WindowStartupLocation/Background have no XAML equivalent on a WinUI
+         Window — the 940×700 size is applied via AppWindow in the
+         constructor and the background moves to the root grid. -->
+    <Grid Margin="16" Background="{ThemeResource SurfaceBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header + verdict -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+            <TextBlock Text="PID Inquiry" Style="{ThemeResource PageHeader}"/>
+            <TextBlock Text="How was this process spawned? Ancestry chain, spawn mechanism and corroborating records — with PID-reuse checks before any parent is trusted."
+                       Foreground="{ThemeResource TextSecondaryBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,-8,0,0"/>
+            <Border x:Name="VerdictBanner" Background="#1A4A8A" CornerRadius="6" Padding="12,8" Margin="0,10,0,0">
+                <StackPanel>
+                    <TextBlock x:Name="VerdictKindText" Text="Collecting…" Foreground="#7EB8F7" FontWeight="SemiBold" FontSize="14"/>
+                    <TextBlock x:Name="VerdictDetailText" Foreground="#B9D4F5" FontSize="12" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <!-- Identity -->
+        <Border Grid.Row="1" Background="{ThemeResource SurfaceAltBrush}" CornerRadius="4" Padding="12,8" Margin="0,0,0,10">
+            <StackPanel>
+                <!-- WinUI port: WPF WrapPanel → VariableSizedWrapGrid (WinUI
+                     ships no WrapPanel) -->
+                <VariableSizedWrapGrid Orientation="Horizontal">
+                    <StackPanel Margin="0,0,28,6">
+                        <TextBlock Text="PROCESS" Foreground="{ThemeResource TextSecondaryBrush}" FontSize="10"/>
+                        <TextBlock x:Name="IdentName" FontFamily="Consolas" FontSize="12"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,28,6">
+                        <TextBlock Text="PID" Foreground="{ThemeResource TextSecondaryBrush}" FontSize="10"/>
+                        <TextBlock x:Name="IdentPid" FontFamily="Consolas" FontSize="12"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,28,6">
+                        <TextBlock Text="STARTED" Foreground="{ThemeResource TextSecondaryBrush}" FontSize="10"/>
+                        <TextBlock x:Name="IdentCreated" FontFamily="Consolas" FontSize="12"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,28,6">
+                        <TextBlock Text="OWNER" Foreground="{ThemeResource TextSecondaryBrush}" FontSize="10"/>
+                        <TextBlock x:Name="IdentOwner" FontFamily="Consolas" FontSize="12"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,28,6">
+                        <TextBlock Text="SESSION" Foreground="{ThemeResource TextSecondaryBrush}" FontSize="10"/>
+                        <TextBlock x:Name="IdentSession" FontFamily="Consolas" FontSize="12"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,0,6">
+                        <TextBlock Text="MEMORY" Foreground="{ThemeResource TextSecondaryBrush}" FontSize="10"/>
+                        <TextBlock x:Name="IdentMemory" FontFamily="Consolas" FontSize="12"/>
+                    </StackPanel>
+                </VariableSizedWrapGrid>
+                <TextBlock x:Name="IdentImage" Foreground="{ThemeResource TextSecondaryBrush}" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap"/>
+                <TextBlock x:Name="IdentCmd" Foreground="{ThemeResource TextSecondaryBrush}" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                <!-- "What is this process?" — plain-English gloss for
+                     helper names that mean nothing on their own -->
+                <TextBlock x:Name="IdentGloss" Foreground="{ThemeResource TextSecondaryBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Spawn chain -->
+        <TextBlock Grid.Row="2" Text="SPAWN CHAIN (child → root · red links failed the PID-reuse check)"
+                   Foreground="{ThemeResource TextSecondaryBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,4"/>
+        <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto">
+            <ItemsControl x:Name="ChainList">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Margin="0,4">
+                            <TextBlock Text="{Binding Arrow}" Foreground="{ThemeResource AccentGreenBrush}" FontSize="11" Margin="0,0,0,1"/>
+                            <!-- WinUI port: the Verified DataTrigger became the
+                                 HeadForeground brush computed in Render -->
+                            <TextBlock Text="{Binding Head}" Foreground="{Binding HeadForeground}" FontFamily="Consolas" FontSize="12" TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding Cmd}" Foreground="{ThemeResource TextSecondaryBrush}"
+                                       FontFamily="Consolas" FontSize="11" TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding Note}" Foreground="#FBBF24" FontSize="11" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <!-- Evidence + warnings -->
+        <StackPanel Grid.Row="4" Margin="0,10,0,0">
+            <TextBlock Text="EVIDENCE" Foreground="{ThemeResource TextSecondaryBrush}" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,4"/>
+            <ScrollViewer MaxHeight="190" VerticalScrollBarVisibility="Auto">
+                <ItemsControl x:Name="EvidenceList">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="services:EvidenceItem">
+                            <StackPanel Margin="0,3">
+                                <TextBlock FontFamily="Consolas" FontSize="11" TextWrapping="Wrap">
+                                    <!-- WinUI port: Run.Text does not support
+                                         {Binding} in WinUI — x:Bind against the
+                                         record's public fields; Mode=OneWay kept
+                                         (x:Bind defaults to OneTime). -->
+                                    <Run Text="{x:Bind Source, Mode=OneWay}" FontWeight="SemiBold" Foreground="#7EB8F7"/>
+                                    <Run Text=" — "/>
+                                    <Run Text="{x:Bind Detail, Mode=OneWay}"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+            <TextBlock x:Name="WarningsText" Foreground="#FBBF24" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0"/>
+        </StackPanel>
+
+        <!-- Buttons + status -->
+        <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="0,12,0,0">
+            <Button Content="↻ Re-collect" Style="{ThemeResource PrimaryButton}" Padding="10,2" Click="RefreshBtn_Click" Margin="0,0,8,0"/>
+            <Button Content="📋 Copy report" Style="{ThemeResource PrimaryButton}" Padding="10,2" Click="CopyBtn_Click" Margin="0,0,8,0"/>
+            <TextBlock x:Name="StatusText" Text="Collecting… (WMI snapshot, parent chain, Sysmon events, shell history)"
+                       Foreground="{ThemeResource TextSecondaryBrush}" FontSize="11" VerticalAlignment="Center" TextWrapping="Wrap"/>
+        </StackPanel>
+    </Grid>
+</Window>

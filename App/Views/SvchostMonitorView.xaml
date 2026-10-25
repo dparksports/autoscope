@@ -1,0 +1,235 @@
+<Page x:Class="AutoScope.Views.SvchostMonitorView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:dg="using:CommunityToolkit.WinUI.UI.Controls"
+      NavigationCacheMode="Required"
+      Loaded="UserControl_Loaded">
+
+    <!-- WinUI port: the WPF UserControl root becomes the hosting Page; its
+         root Grid ports as-is. LayoutRoot.PointerPressed approximates the
+         WPF Popups' StaysOpen="False" (dismiss on any outside click). -->
+    <Grid x:Name="LayoutRoot" Margin="20" PointerPressed="LayoutRoot_PointerPressed">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Grid.Row="0" Margin="0,0,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="Process Monitor" Style="{ThemeResource PageHeader}"/>
+                <TextBlock Text="Native Sysmon Event ID 3 tracing + Raw Socket Packet Sniffer + startup connection baseline"
+                           Foreground="{ThemeResource TextSecondaryBrush}" FontSize="12" Margin="0,-12,0,0"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                <Button x:Name="SetupSysmonBtn" Content="🛠 Setup Sysmon" Style="{ThemeResource PrimaryButton}" Click="SetupSysmonBtn_Click" Margin="0,0,8,0" Visibility="Collapsed"/>
+                <Button x:Name="ToggleMonitorBtn" Content="Start Monitor" Style="{ThemeResource PrimaryButton}" Click="ToggleMonitorBtn_Click" Margin="0,0,8,0"/>
+                <Button x:Name="SaveCsvBtn" Content="Force Save CSV" Style="{ThemeResource PrimaryButton}" Click="SaveCsvBtn_Click"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- WinUI port: the WPF buttons' Cursor="Hand" is dropped (WinUI has
+             no per-control cursors), and their Button.Resources
+             Border-CornerRadius styles are dropped (implicit styles do not
+             reach WinUI button templates). -->
+        <!-- Status -->
+        <Border Grid.Row="1" Background="{ThemeResource SurfaceAltBrush}" CornerRadius="4" Padding="12,8" Margin="0,0,0,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="MonitorStatusText" Text="Monitor is stopped." Foreground="{ThemeResource TextSecondaryBrush}" VerticalAlignment="Center"/>
+                <!-- Ignored/blocked counts sit right after the monitor state
+                     they belong to, not at the far end of the controls row. -->
+                <Button x:Name="IgnoredListBtn" Grid.Column="1" Content="Ignored: 0" Click="IgnoredListBtn_Click" Margin="0,0,8,0" Padding="10,2" FontSize="11"
+                        Background="#3A1520" Foreground="#F2A0B4" BorderThickness="0" VerticalAlignment="Center"
+                        ToolTipService.ToolTip="View and manage ignored processes"/>
+                <Button x:Name="BlockedListBtn" Grid.Column="2" Content="Blocked: 0" Click="BlockedListBtn_Click" Margin="0,0,12,0" Padding="10,2" FontSize="11"
+                        Background="#3A1520" Foreground="#F2A0B4" BorderThickness="0" VerticalAlignment="Center"
+                        ToolTipService.ToolTip="View and remove firewall blocks created from this monitor"/>
+                <!-- High-transmitter threshold chip: rows at/above this TX
+                     volume pin to the top of the grid and get tinted. -->
+                <Border Grid.Column="3" Background="#3A2A14" CornerRadius="10" Padding="10,3" Margin="0,0,12,0" VerticalAlignment="Center"
+                        ToolTipService.ToolTip="Rows whose transmitted volume reaches this threshold are pinned to the top of the grid and tinted red — the heavy talkers separate themselves from the noise. Change the number or unit anytime; remembered across launches.">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock x:Name="HighTxCountText" Text="High TX: 0 ≥ 1 KB"
+                                   Foreground="#E5C77B" FontSize="11" FontFamily="Consolas" VerticalAlignment="Center"/>
+                        <TextBox x:Name="TxThresholdBox" Width="44" Margin="8,0,0,0" Padding="2" FontFamily="Consolas" FontSize="11"
+                                 Background="{ThemeResource SurfaceBrush}" Foreground="{ThemeResource TextPrimaryBrush}"
+                                 BorderBrush="{ThemeResource BorderBrush}" TextChanged="TxThreshold_Changed"/>
+                        <ComboBox x:Name="TxUnitCombo" Width="58" Margin="4,0,0,0" FontSize="11" SelectionChanged="TxThreshold_Changed">
+                            <ComboBoxItem Content="B" Tag="1"/>
+                            <ComboBoxItem Content="KB" Tag="1024" IsSelected="True"/>
+                            <ComboBoxItem Content="MB" Tag="1048576"/>
+                        </ComboBox>
+                    </StackPanel>
+                </Border>
+                <!-- DNS cache counter chip -->
+                <Border Grid.Column="4" Background="#1A4A8A" CornerRadius="10" Padding="10,3" Margin="0,0,12,0" VerticalAlignment="Center">
+                    <TextBlock x:Name="DnsCacheChip" Text="DNS cache: 0 entries"
+                               Foreground="#7EB8F7" FontSize="11" FontFamily="Consolas"/>
+                </Border>
+                <StackPanel Grid.Column="5" Orientation="Horizontal">
+                    <CheckBox x:Name="HideCloudCheck" Content="Hide Known/Cloud IPs" IsChecked="False" Foreground="{ThemeResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Checked="Filter_Changed" Unchecked="Filter_Changed"/>
+                    <!-- One-way transmitter lens, off by default: when on, the
+                         grid shows only rows that have sent packets and never
+                         received a reply. New rows must first sit through the
+                         grace period (30s) with zero Rx, so mid-handshake
+                         conversations don't flash as TX-only. -->
+                    <CheckBox x:Name="TxOnlyCheck" Content="TX-only (no reply)" IsChecked="False" Foreground="{ThemeResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,12,0" Checked="TxOnlyFilter_Changed" Unchecked="TxOnlyFilter_Changed"
+                              ToolTipService.ToolTip="Show only rows that have transmitted packets and never received any — the one-way transmitter pattern (blocked outbound, dead-end beacons). Rows qualify after 30s of life with zero Rx; the count appears here while the filter is off. Rx is counted by the raw-socket sniffer, so IPv6 replies can lag."/>
+                    <!-- PID inquiry lives in the row context menu and the
+                         row double-click (OpenPidTrace) — the bar keeps only
+                         the filters and the ignore list. -->
+                    <TextBlock Text="Ignore Process:" VerticalAlignment="Center" Foreground="{ThemeResource TextSecondaryBrush}" Margin="16,0,8,0"
+                               ToolTipService.ToolTip="Connections from ignored processes never appear in the list"/>
+                    <TextBox x:Name="IgnoreProcessBox" Width="130" Padding="4" Background="{ThemeResource SurfaceBrush}" Foreground="{ThemeResource TextPrimaryBrush}" BorderBrush="{ThemeResource BorderBrush}"
+                             ToolTipService.ToolTip="Process name to hide from the list, e.g. chrome or chrome.exe" KeyDown="IgnoreProcessBox_KeyDown"/>
+                    <Button x:Name="IgnoreProcessBtn" Content="Ignore" Click="IgnoreProcessBtn_Click" Margin="8,0,0,0" Padding="12,2" Style="{ThemeResource PrimaryButton}"/>
+                    <!-- WinUI port: Popup keeps IsOpen, but WinUI's Popup has
+                         no Placement/PlacementTarget/StaysOpen — the popup is
+                         positioned under its button by OpenPopupBelow and
+                         dismissed by LayoutRoot_PointerPressed. -->
+                    <Popup x:Name="BlockedListPopup">
+                        <Border Background="{ThemeResource SurfaceAltBrush}" BorderBrush="{ThemeResource BorderBrush}" BorderThickness="1" CornerRadius="4" Padding="10" MinWidth="340" Margin="0,4,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Firewall blocks created from this monitor" Foreground="{ThemeResource TextPrimaryBrush}" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <ListBox x:Name="BlockedListBox" MaxHeight="200" MinHeight="34" Background="{ThemeResource SurfaceBrush}" Foreground="{ThemeResource TextPrimaryBrush}" BorderBrush="{ThemeResource BorderBrush}" FontFamily="Consolas" FontSize="11"/>
+                                <Button Content="Unblock Selected" Click="UnblockBtn_Click" Margin="0,8,0,0" Padding="12,2" HorizontalAlignment="Left" Style="{ThemeResource PrimaryButton}"/>
+                                <Button Content="🛠 Manage all (grouped, classified, bulk actions)…" Click="ManageBlockedBtn_Click" Margin="0,6,0,0" Padding="4,2" HorizontalAlignment="Left"
+                                        Background="Transparent" Foreground="#7EB8F7" BorderThickness="0"/>
+                                <!-- WinUI port: WPF Separator → 1-px rule
+                                     (MenuFlyoutSeparator only renders inside
+                                     a MenuFlyout) -->
+                                <Rectangle Height="1" Fill="{ThemeResource BorderBrush}" Margin="0,8,0,4"/>
+                                <!-- 'Don't ask again' state: visible + reversible, not a hidden cookie -->
+                                <TextBlock x:Name="SuppressedPromptsText" Text="All confirmation prompts active"
+                                           Foreground="{ThemeResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,4"/>
+                                <Button Content="↩ Reset 'don't ask again' choices" Click="ResetConfirmPrefsBtn_Click" Margin="0,0,0,0" Padding="4,2" HorizontalAlignment="Left"
+                                        Background="Transparent" Foreground="#7EB8F7" BorderThickness="0"
+                                        ToolTipService.ToolTip="Re-arm every block confirmation warning that was suppressed with 'Don't ask again'"/>
+                            </StackPanel>
+                        </Border>
+                    </Popup>
+                    <Popup x:Name="IgnoredListPopup">
+                        <Border Background="{ThemeResource SurfaceAltBrush}" BorderBrush="{ThemeResource BorderBrush}" BorderThickness="1" CornerRadius="4" Padding="10" MinWidth="260" Margin="0,4,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Ignored processes" Foreground="{ThemeResource TextPrimaryBrush}" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <ListBox x:Name="IgnoredListBox" MaxHeight="200" MinHeight="34" Background="{ThemeResource SurfaceBrush}" Foreground="{ThemeResource TextPrimaryBrush}" BorderBrush="{ThemeResource BorderBrush}" FontFamily="Consolas" FontSize="11"/>
+                                <Button Content="Remove Selected" Click="RemoveIgnoredBtn_Click" Margin="0,8,0,0" Padding="12,2" HorizontalAlignment="Left" Style="{ThemeResource PrimaryButton}"/>
+                            </StackPanel>
+                        </Border>
+                    </Popup>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Connections Grid -->
+        <!-- WinUI port: the WPF DataGrid becomes the toolkit DataGrid. Its
+             RowStyle DataTriggers (high-transmitter tint, stale fade) and the
+             Process/Remote-IP/Host cell-template DataTriggers have no WinUI
+             equivalent — they are applied in code-behind (ApplyRowVisuals).
+             The row ContextMenu became the RowMenu MenuFlyout shown from
+             Row_RightTapped; the row double-click opens the PID trace from
+             Row_DoubleTapped (both wired in SvchostGrid_LoadingRow).
+             AutoGenerateColumns="False" keeps the designed columns only. -->
+        <dg:DataGrid Grid.Row="2" x:Name="SvchostGrid" SelectionMode="Single" AutoGenerateColumns="False"
+                     LoadingRow="SvchostGrid_LoadingRow">
+            <FlyoutBase.AttachedFlyout>
+                <MenuFlyout x:Name="RowMenu" Opened="RowMenu_Opened">
+                    <MenuFlyoutItem x:Name="TracePidMenuItem" Text="🔎 Trace: how was this PID spawned?" Click="TracePidMenuItem_Click"/>
+                    <MenuFlyoutItem x:Name="RevealNameMenuItem" Text="🏷 Reveal real process name (Sysmon record)" Click="RevealNameMenuItem_Click"/>
+                    <MenuFlyoutSeparator/>
+                    <MenuFlyoutItem x:Name="IgnoreRowMenuItem" Text="🚫 Ignore this process" Click="IgnoreRowMenuItem_Click"/>
+                    <MenuFlyoutSeparator/>
+                    <MenuFlyoutItem x:Name="BlockIpMenuItem" Text="⛔ Block Remote IP in Firewall" Click="BlockRemoteIP_Click"/>
+                    <MenuFlyoutItem x:Name="BlockProcessMenuItem" Text="⛔ Block Process in Firewall" Click="BlockProcess_Click"/>
+                    <MenuFlyoutItem x:Name="KillProcessMenuItem" Text="💀 Kill process" Click="KillProcess_Click"/>
+                    <MenuFlyoutItem x:Name="TaskDetailsMenuItem" Text="📋 Scheduled task details" Click="TaskDetails_Click"/>
+                    <MenuFlyoutItem x:Name="DisableTaskMenuItem" Text="⏸ Disable this scheduled task" Click="DisableTask_Click"/>
+                </MenuFlyout>
+            </FlyoutBase.AttachedFlyout>
+            <dg:DataGrid.Columns>
+                <!-- Blocked state at a glance: ⛔ = traffic denied (IP and/or
+                     process rule active), ⏸ = rules exist but paused, empty =
+                     allowed (outbound default). Hover for which rule + its
+                     provenance. The marked cells themselves turn red +
+                     strikethrough so it's clear WHICH half is blocked. -->
+                <dg:DataGridTemplateColumn Header="Block" Width="46" CanUserResize="False">
+                    <dg:DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding StatusGlyph}" FontSize="13" HorizontalAlignment="Center"
+                                       ToolTipService.ToolTip="{Binding StatusToolTip}"/>
+                        </DataTemplate>
+                    </dg:DataGridTemplateColumn.CellTemplate>
+                </dg:DataGridTemplateColumn>
+                <!-- Tooltip shows the full Sysmon image path, plus the scheduled
+                     task behind it for taskhostw rows (attribution survives
+                     process exit — no more bare PIDs). -->
+                <!-- WinUI port: the HasToolTip/IsProcessBlocked DataTriggers
+                     live in ApplyRowVisuals now -->
+                <dg:DataGridTemplateColumn Header="Process" Width="160">
+                    <dg:DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding ProcessDisplay}"/>
+                        </DataTemplate>
+                    </dg:DataGridTemplateColumn.CellTemplate>
+                </dg:DataGridTemplateColumn>
+                <!-- Header-click sorting uses the DateTime (LastSeen), not the
+                     relative-time display string, which has no meaningful order. -->
+                <dg:DataGridTextColumn Header="Last Update" Binding="{Binding LastSeenDisplay}"
+                                       Width="100"/>
+                <dg:DataGridTextColumn Header="Tx Pkts"    Binding="{Binding TxPackets}"      Width="80"/>
+                <dg:DataGridTextColumn Header="Tx Bytes"   Binding="{Binding TxBytesDisplay}" Width="90"/>
+                <!-- Remote IP: blocked IPs turn red + strikethrough, hover
+                     shows the block rule's provenance (→ ApplyRowVisuals) -->
+                <dg:DataGridTemplateColumn Header="Remote IP" Width="120">
+                    <dg:DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding RemoteIp}" Foreground="{ThemeResource TextPrimaryBrush}"/>
+                        </DataTemplate>
+                    </dg:DataGridTemplateColumn.CellTemplate>
+                </dg:DataGridTemplateColumn>
+                <!-- Host column: dims + italicises cells that are still
+                     resolving (→ ApplyRowVisuals) -->
+                <dg:DataGridTemplateColumn Header="Host" Width="220">
+                    <dg:DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding HostnameDisplay}" Foreground="{ThemeResource TextPrimaryBrush}"/>
+                        </DataTemplate>
+                    </dg:DataGridTemplateColumn.CellTemplate>
+                </dg:DataGridTemplateColumn>
+                <dg:DataGridTextColumn Header="Rx Pkts"    Binding="{Binding RxPackets}"      Width="80"/>
+                <dg:DataGridTextColumn Header="Rx Bytes"   Binding="{Binding RxBytesDisplay}" Width="90"/>
+            </dg:DataGrid.Columns>
+        </dg:DataGrid>
+
+        <!-- Non-modal block feedback: outcome + one-click Undo. Replaces the
+             old per-block "Blocked!" MessageBox — the row visibly flipping to
+             ⛔ IS the confirmation; this just says what happened and offers
+             the takeback. Auto-hides after a few seconds. -->
+        <!-- WinUI port: Panel.ZIndex dropped — as the last child the toast
+             already layers above the grid -->
+        <Border x:Name="BlockToast" Grid.Row="2" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,16,16"
+                Background="{ThemeResource SurfaceAltBrush}" BorderBrush="#3FBF7F" BorderThickness="1" CornerRadius="6"
+                Padding="14,10" Visibility="Collapsed" MaxWidth="560">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock x:Name="BlockToastText" TextWrapping="Wrap" MaxWidth="400" VerticalAlignment="Center"
+                           Foreground="{ThemeResource TextPrimaryBrush}" FontSize="12"/>
+                <Button x:Name="BlockToastUndoBtn" Content="↩ Undo" Click="BlockToastUndo_Click" Margin="14,0,0,0"
+                        Padding="12,2" VerticalAlignment="Center" Style="{ThemeResource PrimaryButton}"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Page>

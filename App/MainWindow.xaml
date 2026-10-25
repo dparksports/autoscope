@@ -1,0 +1,89 @@
+<Window x:Class="AutoScope.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="using:AutoScope.Views"
+        Title="AutoScope">
+
+    <Grid Background="{ThemeResource BackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Sidebar grouped like AutoCommand's: WATCH (feeds), CONTAIN
+             (stopping tools), SYSTEM (the rest). Group headers are
+             non-selectable items. Pages are cached (Required) so a started
+             feed keeps running while another tab is shown. -->
+        <NavigationView x:Name="Nav" Grid.Row="0"
+                        PaneDisplayMode="Left"
+                        IsBackButtonVisible="Collapsed"
+                        IsSettingsVisible="False"
+                        OpenPaneLength="230"
+                        SelectionChanged="Nav_SelectionChanged">
+            <NavigationView.MenuItems>
+                <NavigationViewItem Content="WATCH" SelectsOnInvoked="False"
+                                    FontWeight="Bold" FontSize="11"
+                                    Foreground="{ThemeResource TextSecondaryBrush}"/>
+                <NavigationViewItem x:Name="ProcessMonitorNavItem" Tag="ProcessMonitor"
+                                    Content="🔍  Process Monitor"/>
+                <NavigationViewItem x:Name="SiteDoctorNavItem" Tag="SiteDoctor"
+                                    Content="🩺  Site Doctor"/>
+                <NavigationViewItemSeparator/>
+                <NavigationViewItem Content="CONTAIN" SelectsOnInvoked="False"
+                                    FontWeight="Bold" FontSize="11"
+                                    Foreground="{ThemeResource TextSecondaryBrush}"/>
+                <NavigationViewItem x:Name="FirewallNavItem" Tag="Firewall"
+                                    Content="🛡  Firewall"/>
+                <NavigationViewItem x:Name="BlocksNavItem" Tag="Blocks"
+                                    Content="⛔  Blocks"/>
+                <NavigationViewItemSeparator/>
+                <NavigationViewItem Content="SYSTEM" SelectsOnInvoked="False"
+                                    FontWeight="Bold" FontSize="11"
+                                    Foreground="{ThemeResource TextSecondaryBrush}"/>
+                <NavigationViewItem x:Name="BeMyGuestNavItem" Tag="BeMyGuest"
+                                    Content="🤖  Be My Guest"/>
+                <NavigationViewItem x:Name="SettingsNavItem" Tag="Settings"
+                                    Content="⚙  Settings"/>
+            </NavigationView.MenuItems>
+
+            <Frame x:Name="ContentFrame"/>
+        </NavigationView>
+
+        <!-- Status bar (ported from AutoCommand MainWindow) -->
+        <Border Grid.Row="1" Background="{ThemeResource SurfaceBrush}"
+                BorderBrush="{ThemeResource BorderBrush}" BorderThickness="0,1,0,0" Padding="12,6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Enforcer Status -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Ellipse x:Name="EnforcerDot" Width="8" Height="8" Fill="#00E5FF" Margin="0,0,8,0"/>
+                    <TextBlock x:Name="EnforcerStatusText" Text="Security Enforcer: Active"
+                               Foreground="{ThemeResource TextSecondaryBrush}" FontSize="11"/>
+                </StackPanel>
+
+                <!-- Threat Alert -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
+                    <TextBlock x:Name="ThreatAlertText" Text=""
+                               Foreground="#E5A631" FontSize="11"
+                               TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                    <Button x:Name="ReviewAlertBtn" Content="Review"
+                            Style="{ThemeResource PrimaryButton}" Padding="8,2" FontSize="10" Margin="8,0,0,0"
+                            Visibility="Collapsed" Click="ReviewAlertBtn_Click"/>
+                    <Button x:Name="RestoreInternetBtn" Content="🚑 Restore Internet"
+                            Style="{ThemeResource PrimaryButton}" Padding="8,2" FontSize="10" Margin="8,0,0,0"
+                            ToolTipService.ToolTip="Blocked something and lost connectivity? Disables ALL AutoScope-created firewall block rules at once. Fully reversible — nothing is deleted."
+                            Click="RestoreInternetBtn_Click"/>
+                </StackPanel>
+
+                <!-- Version -->
+                <TextBlock x:Name="VersionText" Grid.Column="2" Text="AutoScope"
+                           Foreground="#5A5A62" FontSize="10" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

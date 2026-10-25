@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/AgentProxy/">
+    <Project Path="AgentProxy/AutoScope.AgentProxy.csproj" />
+  </Folder>
+  <Folder Name="/App/">
+    <Project Path="App/AutoScope.csproj" />
+  </Folder>
+  <Folder Name="/Core/">
+    <Project Path="Core/AutoScope.Core.csproj" />
+  </Folder>
+  <Project Path="SiteDoctorSelfTest/SiteDoctorSelfTest.csproj" />
+</Solution>

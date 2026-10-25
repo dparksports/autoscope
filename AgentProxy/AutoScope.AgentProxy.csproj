@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The MCP client's spawn target: a tiny asInvoker console exe (no WPF,
+       no admin, no UAC) that forwards stdio JSON-RPC to the running elevated
+       AutoScope instance over loopback. Referenced by the app project so it
+       builds (and publishes) alongside AutoScope; users never run it by
+       hand — the AI client's MCP config does, via the path the app's
+       Settings > AI access card installs. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>AutoScope.AgentProxy</AssemblyName>
+    <AssemblyTitle>AutoScope Agent Proxy</AssemblyTitle>
+    <Product>AutoScope</Product>
+    <!-- follows AutoScope.csproj's <Version> — release.ps1 bumps both so
+         serverInfo/deps.json can never disagree with the app release -->
+    <Version>2026.10.22</Version>
+    <!-- no "+<git hash>" suffix on InformationalVersion: serverInfo.version
+         and the release.ps1 version check want the clean number -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+</Project>
