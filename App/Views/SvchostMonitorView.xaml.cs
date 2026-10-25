@@ -155,6 +155,7 @@ namespace AutoScope.Views
 
             RefreshIgnoredUi();
             LoadBlockedEntries();
+            RefreshIgnoredUi(); // WinUI port: count now reflects the migrated list at launch
             RefreshBlockedUi();
             RefreshConfirmPrefsUi();
             LoadTxThreshold();

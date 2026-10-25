@@ -17,7 +17,7 @@
     <Product>AutoScope</Product>
     <!-- follows AutoScope.csproj's <Version> — release.ps1 bumps both so
          serverInfo/deps.json can never disagree with the app release -->
-    <Version>0.1.1</Version>
+    <Version>0.1.2</Version>
     <!-- no "+<git hash>" suffix on InformationalVersion: serverInfo.version
          and the release.ps1 version check want the clean number -->
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>

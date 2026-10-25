@@ -28,6 +28,15 @@ namespace AutoScope.Services
         {
             try
             {
+                // v0.1.1 wrote the ignore list CWD-relative, which for an
+                // elevated launch meant System32 — remove our own stray.
+                try
+                {
+                    string stray = Path.Combine(Environment.SystemDirectory, "ignored_processes.txt");
+                    if (File.Exists(stray)) File.Delete(stray);
+                }
+                catch { /* best effort */ }
+
                 if (File.Exists(MarkerPath)) return;
                 var (blocks, ignored) = Import();
 
@@ -48,46 +57,70 @@ namespace AutoScope.Services
         {
             string acDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AutoCommand");
-            int blocks = 0;
+            int blocks = ImportBlocks(acDir);
+            int ignored = ImportIgnored(acDir);
+            return (blocks, ignored);
+        }
 
-            // ── blocks.txt: parse through BlocksStore's own reader by
-            // pointing it at the AutoCommand data dir for one Load() ──
-            string acStore = Path.Combine(acDir, "blocks.txt");
-            if (File.Exists(acStore))
+        /// <summary>
+        /// Copies/merges AutoCommand's blocks.txt into ours at the FILE
+        /// level, before BlocksStore loads anything. BlocksStore.Load() is a
+        /// one-shot lazy parse of the v3 pipe format, so a straight file
+        /// merge is both simpler and exactly format-preserving (attribution,
+        /// history, unrecognized lines all survive verbatim).
+        /// </summary>
+        private static int ImportBlocks(string acDir)
+        {
+            try
             {
-                var restore = BlocksStore.DataDirectory;
-                List<BlockRecord> imported;
-                try
-                {
-                    BlocksStore.DataDirectory = acDir;
-                    BlocksStore.Load();
-                    imported = BlocksStore.Records.ToList();
-                }
-                finally { BlocksStore.DataDirectory = restore; }
+                string acStore = Path.Combine(acDir, "blocks.txt");
+                if (!File.Exists(acStore)) return 0;
 
-                BlocksStore.Load(); // our own store (no-op if already loaded)
-                var mine = BlocksStore.Records;
-                foreach (var r in imported)
+                Directory.CreateDirectory(DataDir);
+                string mine = BlocksStore.StorePath;
+
+                // v3 line: v3|kind|key|... — identity is (kind, key), same as
+                // BlocksStore.AddOrUpdate's dedupe
+                static string LineKey(string l)
                 {
-                    if (mine.Any(b => b.Kind == r.Kind &&
-                                      string.Equals(b.Key, r.Key, StringComparison.OrdinalIgnoreCase))) continue;
-                    BlocksStore.AddOrUpdate(r, "migrated-from-autocommand");
-                    blocks++;
+                    var parts = l.Split('|');
+                    return parts.Length > 2 ? parts[1] + "|" + parts[2] : l;
                 }
+
+                if (!File.Exists(mine))
+                {
+                    File.Copy(acStore, mine);
+                    return File.ReadAllLines(mine).Count(l => l.StartsWith("v3|", StringComparison.Ordinal));
+                }
+
+                var known = new HashSet<string>(
+                    File.ReadAllLines(mine)
+                        .Where(l => l.StartsWith("v3|", StringComparison.Ordinal))
+                        .Select(LineKey),
+                    StringComparer.OrdinalIgnoreCase);
+                var add = File.ReadAllLines(acStore)
+                    .Where(l => l.StartsWith("v3|", StringComparison.Ordinal))
+                    .Where(l => known.Add(LineKey(l)))
+                    .ToList();
+                if (add.Count > 0) File.AppendAllLines(mine, add);
+                return add.Count;
             }
+            catch { return 0; /* migration must never block startup */ }
+        }
 
-            // ── ignored processes: CWD-relative file next to whichever exe ──
+        /// <summary>AutoCommand's ignore list, found next to its exe (its
+        /// startup task), in its data dir, via env var, or in a sibling
+        /// checkout. Merged through SysmonWatcherService so the file format
+        /// and normalization stay in one place.</summary>
+        private static int ImportIgnored(string acDataDir)
+        {
             int ignored = 0;
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (string candidate in AutoCommandIgnoreListCandidates(acDir))
+            foreach (string candidate in AutoCommandIgnoreListCandidates(acDataDir))
             {
                 try
                 {
                     if (!File.Exists(candidate)) continue;
-                    // SysmonWatcherService owns the ignore-list file format;
-                    // an instance over the shared tracked-ips map of the view
-                    // is not needed — normalization + persistence are static
-                    // behavior of the service over its own file.
                     var watcher = new SysmonWatcherService(
                         new System.Collections.Concurrent.ConcurrentDictionary<string, Models.SvchostMonitorItem>(),
                         new DnsResolutionService());
@@ -104,8 +137,7 @@ namespace AutoScope.Services
                 }
                 catch { /* best effort per candidate */ }
             }
-
-            return (blocks, ignored);
+            return ignored;
         }
 
         /// <summary>Where AutoCommand's ignored_processes.txt might live, in

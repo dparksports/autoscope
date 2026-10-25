@@ -33,7 +33,12 @@ namespace AutoScope.Services
         // Processes the user asked to keep out of the list, matched on the
         // image file name (e.g. "chrome.exe"), case-insensitively.
         private readonly ConcurrentBag<string> _ignoredProcesses = new ConcurrentBag<string>();
-        private const string IgnoredProcessesPath = "ignored_processes.txt";
+        // WinUI port: was CWD-relative ("ignored_processes.txt") — an
+        // elevated launch starts in C:\Windows\System32, which scattered
+        // the file (and broke migration). Anchored to the app data dir now.
+        private static string IgnoredProcessesPath => System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "AutoScope", "ignored_processes.txt");
 
         public SysmonWatcherService(
             ConcurrentDictionary<string, SvchostMonitorItem> trackedIps,
@@ -161,6 +166,7 @@ namespace AutoScope.Services
         {
             try
             {
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(IgnoredProcessesPath));
                 File.WriteAllLines(IgnoredProcessesPath,
                     _ignoredProcesses.OrderBy(p => p, StringComparer.OrdinalIgnoreCase));
             }
