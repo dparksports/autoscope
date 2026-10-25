@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="430" viewBox="0 0 1120 430" font-family="'Segoe UI','Segoe UI Variable',system-ui,sans-serif">
+  <defs>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3B82F6"/><stop offset="1" stop-color="#60A5FA"/>
+    </linearGradient>
+  </defs>
+  <rect width="1120" height="430" fill="#171B22"/>
+  <text x="56" y="64" fill="#F1F4F9" font-size="30" font-weight="700">Try it in five minutes</text>
+  <text x="56" y="92" fill="#98A2B3" font-size="15">No installer. No account. Nothing leaves this PC.</text>
+
+  <!-- step 1 -->
+  <rect x="56" y="120" width="240" height="230" rx="14" fill="#1F242E" stroke="#39414F"/>
+  <circle cx="88" cy="156" r="16" fill="url(#accent)"/>
+  <text x="88" y="162" fill="#FFFFFF" font-size="16" font-weight="700" text-anchor="middle">1</text>
+  <text x="88" y="208" font-size="34" text-anchor="middle">&#11015;&#65039;</text>
+  <text x="88" y="244" fill="#F1F4F9" font-size="16" font-weight="600" text-anchor="middle">Download, unzip</text>
+  <text x="88" y="272" fill="#98A2B3" font-size="13" text-anchor="middle">AutoScope-v…-win-x64.zip</text>
+  <text x="88" y="292" fill="#98A2B3" font-size="13" text-anchor="middle">unzip anywhere — that's the install</text>
+
+  <!-- step 2 -->
+  <rect x="312" y="120" width="240" height="230" rx="14" fill="#1F242E" stroke="#39414F"/>
+  <circle cx="344" cy="156" r="16" fill="url(#accent)"/>
+  <text x="344" y="162" fill="#FFFFFF" font-size="16" font-weight="700" text-anchor="middle">2</text>
+  <text x="344" y="208" font-size="34" text-anchor="middle">&#128737;&#65039;</text>
+  <text x="344" y="244" fill="#F1F4F9" font-size="16" font-weight="600" text-anchor="middle">Run as administrator</text>
+  <text x="344" y="272" fill="#98A2B3" font-size="13" text-anchor="middle">right-click AutoScope.exe —</text>
+  <text x="344" y="292" fill="#98A2B3" font-size="13" text-anchor="middle">the same permission Task Manager asks</text>
+
+  <!-- step 3 -->
+  <rect x="568" y="120" width="240" height="230" rx="14" fill="#1F242E" stroke="#39414F"/>
+  <circle cx="600" cy="156" r="16" fill="url(#accent)"/>
+  <text x="600" y="162" fill="#FFFFFF" font-size="16" font-weight="700" text-anchor="middle">3</text>
+  <text x="600" y="208" font-size="34" text-anchor="middle">&#129309;</text>
+  <text x="600" y="244" fill="#F1F4F9" font-size="16" font-weight="600" text-anchor="middle">AutoCommand moves with you</text>
+  <text x="600" y="272" fill="#98A2B3" font-size="13" text-anchor="middle">your blocks, attribution and ignore list</text>
+  <text x="600" y="292" fill="#98A2B3" font-size="13" text-anchor="middle">import on first launch — nothing renamed</text>
+
+  <!-- step 4 -->
+  <rect x="824" y="120" width="240" height="230" rx="14" fill="#1F242E" stroke="#39414F"/>
+  <circle cx="856" cy="156" r="16" fill="url(#accent)"/>
+  <text x="856" y="162" fill="#FFFFFF" font-size="16" font-weight="700" text-anchor="middle">4</text>
+  <text x="856" y="208" font-size="34" text-anchor="middle">&#128064;</text>
+  <text x="856" y="244" fill="#F1F4F9" font-size="16" font-weight="600" text-anchor="middle">Look around, ask something</text>
+  <text x="856" y="272" fill="#98A2B3" font-size="13" text-anchor="middle">one click to block, one to undo —</text>
+  <text x="856" y="292" fill="#98A2B3" font-size="13" text-anchor="middle">every answer in plain English</text>
+
+  <text x="56" y="396" fill="#98A2B3" font-size="14">Deleting the folder uninstalls it completely. Windows may show a blue "protected your PC" screen first — click More info &#8594; Run anyway (open source, unsigned).</text>
+</svg>

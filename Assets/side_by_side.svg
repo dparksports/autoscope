@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="560" viewBox="0 0 1120 560" font-family="'Segoe UI','Segoe UI Variable',system-ui,sans-serif">
+  <rect width="1120" height="560" fill="#171B22"/>
+  <text x="56" y="58" fill="#F1F4F9" font-size="30" font-weight="700">One machine, both apps</text>
+  <text x="56" y="86" fill="#98A2B3" font-size="15">AutoScope adopts your AutoCommand install instead of fighting it.</text>
+
+  <!-- AutoCommand card -->
+  <rect x="56" y="120" width="340" height="300" rx="14" fill="#1F242E" stroke="#39414F"/>
+  <text x="80" y="156" fill="#F1F4F9" font-size="19" font-weight="700">AutoCommand</text>
+  <text x="80" y="178" fill="#98A2B3" font-size="13">WPF · the original, 14 tabs</text>
+  <g fill="#F1F4F9" font-size="14">
+    <text x="80" y="216">&#9679; creates AC-BLOCK rules</text>
+    <text x="80" y="244">&#9679; its own data + ignore list</text>
+    <text x="80" y="272">&#9679; bridge ports 47821+</text>
+    <text x="80" y="300">&#9679; 'autocommand' MCP entry</text>
+  </g>
+  <text x="80" y="344" fill="#98A2B3" font-size="13">keeps working exactly as before —</text>
+  <text x="80" y="364" fill="#98A2B3" font-size="13">nothing about it changes, ever</text>
+
+  <!-- shared middle: the firewall -->
+  <rect x="428" y="120" width="264" height="300" rx="14" fill="#122A1A" stroke="#3FB950"/>
+  <text x="560" y="158" fill="#7EE2A8" font-size="17" font-weight="700" text-anchor="middle">the firewall itself</text>
+  <g fill="#F1F4F9" font-size="13.5" text-anchor="middle">
+    <text x="560" y="196">existing AC-BLOCK rules are</text>
+    <text x="560" y="216">adopted in place — never renamed,</text>
+    <text x="560" y="236">never duplicated</text>
+    <text x="560" y="276">every AutoScope launch reconciles</text>
+    <text x="560" y="296">its store against the rules, so both</text>
+    <text x="560" y="316">lists stay in step</text>
+    <text x="560" y="360" fill="#FBBF24">blocked-list and ignore-list records</text>
+    <text x="560" y="380" fill="#FBBF24">import on first run</text>
+  </g>
+
+  <!-- AutoScope card -->
+  <rect x="724" y="120" width="340" height="300" rx="14" fill="#1F242E" stroke="#3B82F6"/>
+  <text x="748" y="156" fill="#F1F4F9" font-size="19" font-weight="700">AutoScope</text>
+  <text x="748" y="178" fill="#98A2B3" font-size="13">WinUI 3 · .NET 10 · six tabs</text>
+  <g fill="#F1F4F9" font-size="14">
+    <text x="748" y="216">&#9679; creates AS-BLOCK rules</text>
+    <text x="748" y="244">&#9679; own data: %LOCALAPPDATA%\AutoScope</text>
+    <text x="748" y="272">&#9679; bridge ports 47921+</text>
+    <text x="748" y="300">&#9679; 'autoscope' MCP entry</text>
+  </g>
+  <text x="748" y="344" fill="#98A2B3" font-size="13">new blocks it creates are its own —</text>
+  <text x="748" y="364" fill="#98A2B3" font-size="13">and both panic buttons stay reversible</text>
+
+  <text x="56" y="472" fill="#F1F4F9" font-size="16" font-weight="600">&#9881;&#65039; Ground rules</text>
+  <text x="56" y="500" fill="#98A2B3" font-size="14">&#8226; Each app's Restore Internet undoes the shared block set it can see — AutoScope's covers its own AS-BLOCK rules and the AC-BLOCK rules it adopted.</text>
+  <text x="56" y="524" fill="#98A2B3" font-size="14">&#8226; Delete %LOCALAPPDATA%\AutoScope\migration-autocommand.done to re-import from AutoCommand at any time.</text>
+</svg>

@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="640" viewBox="0 0 1120 640" font-family="'Segoe UI','Segoe UI Variable',system-ui,sans-serif">
+  <defs>
+    <linearGradient id="accent2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#60A5FA"/><stop offset="1" stop-color="#3B82F6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1120" height="640" fill="#171B22"/>
+  <text x="56" y="60" fill="#F1F4F9" font-size="30" font-weight="700">Where everything lives</text>
+  <text x="56" y="88" fill="#98A2B3" font-size="15">Six tabs in three groups — each group is the question you're asking.</text>
+
+  <!-- sidebar mock -->
+  <rect x="56" y="116" width="240" height="468" rx="12" fill="#1F242E" stroke="#39414F"/>
+  <text x="80" y="150" fill="#98A2B3" font-size="12" font-weight="700">WATCH</text>
+  <rect x="72" y="162" width="208" height="40" rx="8" fill="url(#accent2)" opacity="0.92"/>
+  <text x="88" y="188" fill="#FFFFFF" font-size="14" font-weight="600">&#128269; Process Monitor</text>
+  <rect x="72" y="210" width="208" height="40" rx="8" fill="#282F3B"/>
+  <text x="88" y="236" fill="#F1F4F9" font-size="14">&#129658; Site Doctor</text>
+  <text x="80" y="292" fill="#98A2B3" font-size="12" font-weight="700">CONTAIN</text>
+  <rect x="72" y="304" width="208" height="40" rx="8" fill="#282F3B"/>
+  <text x="88" y="330" fill="#F1F4F9" font-size="14">&#128737; Firewall</text>
+  <rect x="72" y="352" width="208" height="40" rx="8" fill="#282F3B"/>
+  <text x="88" y="378" fill="#F1F4F9" font-size="14">&#9940; Blocks</text>
+  <text x="80" y="434" fill="#98A2B3" font-size="12" font-weight="700">SYSTEM</text>
+  <rect x="72" y="446" width="208" height="40" rx="8" fill="#282F3B"/>
+  <text x="88" y="472" fill="#F1F4F9" font-size="14">&#129302; Be My Guest</text>
+  <rect x="72" y="494" width="208" height="40" rx="8" fill="#282F3B"/>
+  <text x="88" y="520" fill="#F1F4F9" font-size="14">&#9881;&#65039; Settings</text>
+  <text x="176" y="566" fill="#5A6472" font-size="11" text-anchor="middle">AutoScope v2026.10.25</text>
+
+  <!-- right panel: the question each tab answers -->
+  <g font-size="15">
+    <rect x="328" y="128" width="736" height="120" rx="12" fill="#1F242E" stroke="#39414F"/>
+    <text x="352" y="160" fill="#F1F4F9" font-size="17" font-weight="600">&#128269; Process Monitor — "what's talking, right now?"</text>
+    <text x="352" y="186" fill="#98A2B3" font-size="13">Every connection, who started it (PID provenance, svchost identity), live re-sorting,</text>
+    <text x="352" y="206" fill="#98A2B3" font-size="13">TX-only lens for one-way beacons, one-click reversible blocks with provenance baked in.</text>
+
+    <rect x="328" y="262" width="736" height="120" rx="12" fill="#1F242E" stroke="#39414F"/>
+    <text x="352" y="294" fill="#F1F4F9" font-size="17" font-weight="600">&#129658; Site Doctor — "why is this site slow?"</text>
+    <text x="352" y="320" fill="#98A2B3" font-size="13">One 60-second check: recorded traffic, a capped live probe against two control sites,</text>
+    <text x="352" y="340" fill="#98A2B3" font-size="13">and a dependency-block pass — one plain-English verdict, the math one click away.</text>
+
+    <rect x="328" y="396" width="360" height="120" rx="12" fill="#1F242E" stroke="#39414F"/>
+    <text x="352" y="428" fill="#F1F4F9" font-size="17" font-weight="600">&#128737; Firewall</text>
+    <text x="352" y="454" fill="#98A2B3" font-size="13">Profiles (Shields Up and friends),</text>
+    <text x="352" y="474" fill="#98A2B3" font-size="13">the full rule grid via native COM,</text>
+    <text x="352" y="494" fill="#98A2B3" font-size="13">baseline capture + drift auto-fix.</text>
+
+    <rect x="704" y="396" width="360" height="120" rx="12" fill="#1F242E" stroke="#39414F"/>
+    <text x="728" y="428" fill="#F1F4F9" font-size="17" font-weight="600">&#9940; Blocks</text>
+    <text x="728" y="454" fill="#98A2B3" font-size="13">Grouped by the service that made</text>
+    <text x="728" y="474" fill="#98A2B3" font-size="13">the connection; Sysmon attribution</text>
+    <text x="728" y="494" fill="#98A2B3" font-size="13">repair; "a feature broke" restore guide.</text>
+
+    <rect x="328" y="530" width="360" height="120" rx="12" fill="#1F242E" stroke="#39414F"/>
+    <text x="352" y="562" fill="#F1F4F9" font-size="17" font-weight="600">&#129302; Be My Guest</text>
+    <text x="352" y="588" fill="#98A2B3" font-size="13">Invite an MCP-capable AI assistant</text>
+    <text x="352" y="608" fill="#98A2B3" font-size="13">to read the same facts — every request</text>
+    <text x="352" y="628" fill="#98A2B3" font-size="13">logged, every action asks you first.</text>
+
+    <rect x="704" y="530" width="360" height="120" rx="12" fill="#1F242E" stroke="#39414F"/>
+    <text x="728" y="562" fill="#F1F4F9" font-size="17" font-weight="600">&#9881;&#65039; Settings</text>
+    <text x="728" y="588" fill="#98A2B3" font-size="13">Mark-of-the-Web unblock, startup</text>
+    <text x="728" y="608" fill="#98A2B3" font-size="13">task, adapter auto-mitigation,</text>
+    <text x="728" y="628" fill="#98A2B3" font-size="13">security-check cadence.</text>
+  </g>
+</svg>
