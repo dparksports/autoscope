@@ -380,6 +380,7 @@ namespace AutoScope.Views
 
         private void Filter_Changed(object sender, RoutedEventArgs e)
         {
+            if (_viewCollection == null) return; // parse-time firing guard (v2026.10.26.2 class)
             if (_sysmonService != null)
                 _sysmonService.FilterKnownCloudIps = HideCloudCheck.IsChecked == true;
         }
@@ -394,6 +395,7 @@ namespace AutoScope.Views
 
         private void TxOnlyFilter_Changed(object sender, RoutedEventArgs e)
         {
+            if (_viewCollection == null) return; // parse-time firing guard (v2026.10.26.2 class)
             // Assigning Filter refreshes the view; with live filtering on
             // IsTxOnly, membership keeps itself current afterwards.
             // WinUI port: the WPF CollectionView Filter — flag + RefreshView
@@ -452,6 +454,7 @@ namespace AutoScope.Views
 
         private void TxThreshold_Changed(object sender, RoutedEventArgs e)
         {
+            if (_viewCollection == null) return; // parse-time firing guard (v2026.10.26.2 class)
             if (_loadingThreshold) return;
 
             if (!long.TryParse(TxThresholdBox.Text.Trim(), out long value) || value < 0)
