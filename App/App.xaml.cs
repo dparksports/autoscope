@@ -69,7 +69,7 @@ namespace AutoScope
             // pages read the store fresh when opened.
             _ = System.Threading.Tasks.Task.Run(async () =>
             {
-                try { await Services.BlocksStore.ReconcileWithFirewallAsync(); } catch { }
+                try { await Services.BlocksStore.Default.ReconcileWithFirewallAsync(); } catch { }
             });
 
             SinkholeService.Instance.EnsureRunningForCurrentPins();

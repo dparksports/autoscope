@@ -19,43 +19,7 @@ namespace AutoScope.Models
         public string DeviceID { get; set; }
     }
 
-    public class FirewallRuleItem : System.ComponentModel.INotifyPropertyChanged
-    {
-        public string Name { get; set; }
-        public string DisplayName { get; set; }
-        public string DisplayGroup { get; set; }
-        public string Direction { get; set; }
-        public string Action { get; set; }
-        public string Profile { get; set; }
-        public string Program { get; set; }
-        public string Protocol { get; set; }
-        public string LocalPort { get; set; }
-        public string RemotePort { get; set; }
-        public string RemoteAddress { get; set; }
-
-        private bool _enabled;
-        public bool Enabled
-        {
-            get => _enabled;
-            set
-            {
-                if (_enabled != value)
-                {
-                    _enabled = value;
-                    OnPropertyChanged();
-                    OnPropertyChanged(nameof(EnabledDisplay));
-                }
-            }
-        }
-
-        public string EnabledDisplay => Enabled ? "Yes" : "No";
-
-        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string name = null)
-        {
-            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(name));
-        }
-    }
+    // FirewallRuleItem moved to Engines.Firewall (F# RuleInfo)
 
     public class EfiFileResult
     {

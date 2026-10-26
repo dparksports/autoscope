@@ -29,7 +29,7 @@ namespace AutoScope.Services
         {
             return await Task.Run(() =>
             {
-                var pending = BlocksStore.Records.Where(NeedsRepair).ToList();
+                var pending = BlocksStore.Default.Records.Where(NeedsRepair).ToList();
                 int repaired = 0, unresolved = 0;
                 if (pending.Count == 0) return (0, 0);
 
@@ -108,7 +108,7 @@ namespace AutoScope.Services
                     }
                     catch { unresolved++; /* one bad record never stops the pass */ }
                 }
-                BlocksStore.SetAttributions(updates); // one save for the whole pass
+                BlocksStore.Default.SetAttributions(updates); // one save for the whole pass
                 return (repaired, unresolved);
             });
         }

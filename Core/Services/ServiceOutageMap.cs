@@ -116,7 +116,7 @@ namespace AutoScope.Services
 
         internal static bool MatchesCore(HashSet<string> keys, HashSet<string> classes, BlockRecord r)
         {
-            if (keys.Contains(BlocksStore.ServiceGroupKey(r))) return true;
+            if (keys.Contains(BlocksStore.Default.ServiceGroupKey(r))) return true;
             return classes.Count > 0 && classes.Contains(r.ClassAtBlock ?? "");
         }
 

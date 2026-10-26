@@ -48,34 +48,42 @@ namespace AutoScope.Services
     /// The firewall rules remain the source of truth for traffic; this store
     /// carries the identity, classification snapshot and history they lack.
     /// </summary>
-    public static class BlocksStore
+    /// <summary>App-side block-record store. Instance-based (one static
+    /// <c>Default</c> composed from the app identity) so state is testable
+    /// and reload-safe — the v0.1.2 migration bug class (a one-shot load
+    /// latching empty on a transient read failure) dies here: a failed Load
+    /// no longer latches, and Reload() forces a re-read.</summary>
+    public sealed class BlocksStore
     {
+        public static BlocksStore Default { get; } = new(Engines.Core.Identity.autoscope().DataRoot);
+
+        private readonly string _dataDir;
+
         private static readonly object _gate = new();
 
-        public static string DataDirectory { get; set; } = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "AutoScope");
+        public string DataDirectory => _dataDir;
 
-        public static string StorePath => Path.Combine(DataDirectory, "blocks.txt");
-        public static string EventLogPath => Path.Combine(DataDirectory, "blocks-events.log");
+        public BlocksStore(string dataRoot) { _dataDir = dataRoot; }
+
+        public string StorePath => Path.Combine(DataDirectory, "blocks.txt");
+        public string EventLogPath => Path.Combine(DataDirectory, "blocks-events.log");
 
         /// <summary>Lines the loader could not interpret, kept verbatim so a
         /// future version (or a human) can still recover them.</summary>
-        public static readonly List<string> Unrecognized = new();
+        public readonly List<string> Unrecognized = new();
 
-        private static readonly List<BlockRecord> _records = new();
-        public static IReadOnlyList<BlockRecord> Records { get { lock (_gate) return _records.ToList(); } }
+        private readonly List<BlockRecord> _records = new();
+        public IReadOnlyList<BlockRecord> Records { get { lock (_gate) return _records.ToList(); } }
 
-        private static bool _loaded;
+        private bool _loaded;
 
         // ── lifecycle ─────────────────────────────────────────────────────
 
-        public static void Load()
+        public void Load()
         {
             lock (_gate)
             {
                 if (_loaded) return;
-                _loaded = true;
                 _records.Clear();
                 Unrecognized.Clear();
 
@@ -85,7 +93,8 @@ namespace AutoScope.Services
                     if (File.Exists(StorePath))
                         LoadFrom(StorePath);
                 }
-                catch { /* unreadable store — start empty, rules are the truth */ }
+                catch { /* unreadable store — start empty, rules are the truth;
+                           do NOT latch _loaded: next Load() retries */ }
 
                 // One-time import of legacy monitor files: our own CWD-relative
                 // blocked.txt plus any prior install's copy discovered in its
@@ -108,10 +117,12 @@ namespace AutoScope.Services
                 // so an exit without a write must not lose the records.
                 if (importedAny) Save();
             }
+            _loaded = true; // latch only on a completed pass
+
         }
 
         /// <summary>Loads v3 rows; anything else is kept in Unrecognized.</summary>
-        private static void LoadFrom(string path)
+        private void LoadFrom(string path)
         {
             foreach (string line in File.ReadAllLines(path))
             {
@@ -127,7 +138,7 @@ namespace AutoScope.Services
             }
         }
 
-        private static BlockRecord ParseV3(string line)
+        private BlockRecord ParseV3(string line)
         {
             try
             {
@@ -163,7 +174,7 @@ namespace AutoScope.Services
         /// release's blocked.txt behind), so they are read but never touched.
         /// Own-dir candidates first, then discovered, newest install first.
         /// </summary>
-        internal static IEnumerable<string> CandidateLegacyPaths()
+        internal IEnumerable<string> CandidateLegacyPaths()
         {
             string cwd = Path.Combine(Environment.CurrentDirectory, "blocked.txt");
             string baseDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "blocked.txt");
@@ -198,7 +209,7 @@ namespace AutoScope.Services
             }
         }
 
-        internal static bool IsOwnLegacyPath(string path)
+        internal bool IsOwnLegacyPath(string path)
         {
             string cwd = Environment.CurrentDirectory;
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
@@ -214,7 +225,7 @@ namespace AutoScope.Services
         /// row carries the richer data (precise timestamps, process labels).
         /// Returns true when at least one record was added or upgraded.
         /// </summary>
-        private static bool ImportLegacy(string path)
+        private bool ImportLegacy(string path)
         {
             int imported = 0;
             var known = _records.ToDictionary(r => r.Kind + ":" + r.Key, r => r, StringComparer.OrdinalIgnoreCase);
@@ -259,7 +270,7 @@ namespace AutoScope.Services
             return imported > 0;
         }
 
-        private static BlockRecord FromV2(string[] p)
+        private BlockRecord FromV2(string[] p)
         {
             if (!DateTime.TryParse(p[3], out DateTime ts)) ts = DateTime.UtcNow;
             var r = new BlockRecord
@@ -273,7 +284,7 @@ namespace AutoScope.Services
             return r;
         }
 
-        private static BlockRecord FromMyFirewall(string[] p)
+        private BlockRecord FromMyFirewall(string[] p)
         {
             bool field0IsIp = System.Net.IPAddress.TryParse(p[0], out _);
             bool field2IsIp = System.Net.IPAddress.TryParse(p[2], out _);
@@ -295,7 +306,7 @@ namespace AutoScope.Services
         /// <summary>Best-effort identity for imported rows: a named process
         /// becomes its exe-stem group; svchost/unknown stay unresolved pending
         /// the Sysmon repair pass.</summary>
-        private static void SeedServiceFromLabel(BlockRecord r)
+        private void SeedServiceFromLabel(BlockRecord r)
         {
             string label = (r.ProcessName ?? "").Trim();
             if (label.Length == 0 || label.StartsWith("<", StringComparison.Ordinal)) return;
@@ -305,7 +316,7 @@ namespace AutoScope.Services
             r.Attrib = "catalog";
         }
 
-        private static void RenameImported(string legacy)
+        private void RenameImported(string legacy)
         {
             try
             {
@@ -325,7 +336,7 @@ namespace AutoScope.Services
         /// is the monitor's resolved identity ("WpnService", "A+B",
         /// "A+2 more"); the primary service is the first token.
         /// </summary>
-        public static bool TryParseServiceFromDescription(string desc, out string serviceKey, out string displayName)
+        public bool TryParseServiceFromDescription(string desc, out string serviceKey, out string displayName)
         {
             serviceKey = displayName = null;
             if (string.IsNullOrEmpty(desc)) return false;
@@ -352,7 +363,7 @@ namespace AutoScope.Services
             return true;
         }
 
-        public static string ClassForPath(string path)
+        public string ClassForPath(string path)
         {
             if (string.IsNullOrEmpty(path)) return "Application";
             string lower = path.ToLowerInvariant();
@@ -372,7 +383,7 @@ namespace AutoScope.Services
         /// step with rules created by AutoCommand (AC-BLOCK) since the
         /// migration snapshot. Returns how many records were adopted.
         /// </summary>
-        public static async System.Threading.Tasks.Task<int> ReconcileWithFirewallAsync(
+        public async System.Threading.Tasks.Task<int> ReconcileWithFirewallAsync(
             System.Collections.Generic.List<BlockedTarget> inventory = null)
         {
             inventory ??= await AutoScope.Services.Fw.Service.GetBlockedInventoryAsync();
@@ -420,7 +431,7 @@ namespace AutoScope.Services
             return added;
         }
 
-        public static void AddOrUpdate(BlockRecord record, string origin = "monitor")
+        public void AddOrUpdate(BlockRecord record, string origin = "monitor")
         {
             if (record == null || string.IsNullOrEmpty(record.Key)) return;
             lock (_gate)
@@ -441,7 +452,7 @@ namespace AutoScope.Services
             }
         }
 
-        public static void Remove(string kind, string key, string origin = "monitor")
+        public void Remove(string kind, string key, string origin = "monitor")
         {
             lock (_gate)
             {
@@ -458,7 +469,7 @@ namespace AutoScope.Services
 
         /// <summary>Marks the desired state (on/off). The firewall's Enabled
         /// flags stay authoritative for traffic; this is the durable intent.</summary>
-        public static void SetStatus(string kind, string key, string status, string origin = "blocks-tab")
+        public void SetStatus(string kind, string key, string status, string origin = "blocks-tab")
         {
             lock (_gate)
             {
@@ -475,7 +486,7 @@ namespace AutoScope.Services
 
         /// <summary>Bulk status flip for a whole service group (fired after the
         /// firewall rules are toggled so the log reflects the actual outcome).</summary>
-        public static void SetStatusForGroup(string serviceKey, string status, string origin = "blocks-tab")
+        public void SetStatusForGroup(string serviceKey, string status, string origin = "blocks-tab")
         {
             lock (_gate)
             {
@@ -497,12 +508,12 @@ namespace AutoScope.Services
         }
 
         /// <summary>Replaces the identity fields of one record (Sysmon repair).</summary>
-        public static void SetAttribution(string kind, string key, string serviceKey, string displayName, string source) =>
+        public void SetAttribution(string kind, string key, string serviceKey, string displayName, string source) =>
             SetAttributions(new[] { (kind, key, serviceKey, displayName, source) });
 
         /// <summary>Batch form of SetAttribution — one save for the whole
         /// repair pass instead of a file rewrite per record.</summary>
-        public static void SetAttributions(
+        public void SetAttributions(
             IEnumerable<(string kind, string key, string serviceKey, string displayName, string source)> updates)
         {
             lock (_gate)
@@ -529,7 +540,7 @@ namespace AutoScope.Services
         /// <summary>The grouping key the Blocks tab folds rows under — never
         /// the bare "svchost.exe" label: unresolved rows group as
         /// "svchost:unresolved" so the repair pass can find them.</summary>
-        public static string ServiceGroupKey(BlockRecord r)
+        public string ServiceGroupKey(BlockRecord r)
         {
             if (!string.IsNullOrEmpty(r.ServiceKey)) return r.ServiceKey;
             string label = (r.ProcessName ?? "").Trim();
@@ -541,7 +552,7 @@ namespace AutoScope.Services
 
         // ── persistence ───────────────────────────────────────────────────
 
-        private static void Save()
+        private void Save()
         {
             try
             {
@@ -560,11 +571,11 @@ namespace AutoScope.Services
             catch { /* best-effort: the firewall rules are the source of truth */ }
         }
 
-        private static string Sanitize(string s) =>
+        private string Sanitize(string s) =>
             (s ?? "").Replace('|', '/');
 
         /// <summary>Append-only audit trail: utc|action|kind|key|detail|origin.</summary>
-        public static void AppendEvent(string action, string kind, string key, string detail, string origin)
+        public void AppendEvent(string action, string kind, string key, string detail, string origin)
         {
             try
             {

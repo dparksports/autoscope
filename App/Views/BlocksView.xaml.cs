@@ -36,7 +36,7 @@ namespace AutoScope.Views
         {
             get
             {
-                string key = BlocksStore.ServiceGroupKey(Record);
+                string key = BlocksStore.Default.ServiceGroupKey(Record);
                 if (key == "svchost:unresolved") return "…attributing";
                 return ServiceCatalog.DisplayNameFor(key, Record.SvcDisplayName) switch
                 {
@@ -49,7 +49,7 @@ namespace AutoScope.Views
         {
             get
             {
-                string key = BlocksStore.ServiceGroupKey(Record);
+                string key = BlocksStore.Default.ServiceGroupKey(Record);
                 if (ServiceCatalog.TryGet(key, out var c)) return c.Description;
                 return key == "svchost:unresolved"
                     ? "Service identity not yet recovered — the Sysmon/SCM attribution pass fills this in."
@@ -143,7 +143,7 @@ namespace AutoScope.Views
             try
             {
                 StatusText.Text = "loading…";
-                BlocksStore.Load();
+                BlocksStore.Default.Load();
 
                 // Firewall truth (background): which targets have rules, and
                 // are they enabled. The store carries identity/history; the
@@ -156,10 +156,10 @@ namespace AutoScope.Views
                 // (rules from an older version, or blocks AutoCommand made
                 // since the migration snapshot) become store records so the
                 // tab is complete.
-                await BlocksStore.ReconcileWithFirewallAsync(inventory);
+                await BlocksStore.Default.ReconcileWithFirewallAsync(inventory);
 
-                var records = BlocksStore.Records.ToList();
-                if (records.Count == 0 || BlocksStore.Records.Count != records.Count) records = BlocksStore.Records.ToList();
+                var records = BlocksStore.Default.Records.ToList();
+                if (records.Count == 0 || BlocksStore.Default.Records.Count != records.Count) records = BlocksStore.Default.Records.ToList();
 
                 var vms = new List<BlockRowVm>();
                 foreach (var r in records)
@@ -227,13 +227,13 @@ namespace AutoScope.Views
 
                 Render(vms);
                 StatusText.Text = $"synced {DateTime.Now:HH:mm:ss}" +
-                    (BlocksStore.Unrecognized.Count > 0
-                        ? $" · {BlocksStore.Unrecognized.Count} unrecognized line(s) preserved in blocks.txt" : "");
+                    (BlocksStore.Default.Unrecognized.Count > 0
+                        ? $" · {BlocksStore.Default.Unrecognized.Count} unrecognized line(s) preserved in blocks.txt" : "");
 
                 // Auto-repair: nobody should have to know the button exists.
                 // Once per session, when rows are still unattributed, run the
                 // Sysmon/SCM pass in the background and re-render.
-                int unresolved = vms.Count(v => BlocksStore.ServiceGroupKey(v.Record) == "svchost:unresolved");
+                int unresolved = vms.Count(v => BlocksStore.Default.ServiceGroupKey(v.Record) == "svchost:unresolved");
                 if (unresolved > 0 && !_autoRepairStarted)
                 {
                     _autoRepairStarted = true;
@@ -293,7 +293,7 @@ namespace AutoScope.Views
 
         private void Render(List<BlockRowVm> vms)
         {
-            var groups = vms.GroupBy(v => BlocksStore.ServiceGroupKey(v.Record))
+            var groups = vms.GroupBy(v => BlocksStore.Default.ServiceGroupKey(v.Record))
                 .Select(g =>
                 {
                     string key = g.Key;
@@ -338,7 +338,7 @@ namespace AutoScope.Views
             int high = groups.Where(g => g.Impact == ServiceImpact.High).Sum(g => g.Rows.Count);
             int msInfra = vms.Count(v => v.Record.ClassAtBlock is string c &&
                 (c.Contains("Microsoft/Azure") || c.Contains("Akamai") || c.Contains("Gcore")));
-            int unattr = vms.Count(v => BlocksStore.ServiceGroupKey(v.Record) == "svchost:unresolved");
+            int unattr = vms.Count(v => BlocksStore.Default.ServiceGroupKey(v.Record) == "svchost:unresolved");
 
             TotalChip.Text = $"{vms.Count} blocks · {groups.Count} groups";
             ActiveChip.Text = $"⛔ {active} active";
@@ -401,7 +401,7 @@ namespace AutoScope.Views
 
             // Rank by freshest connection attempt: the block still actively
             // swallowing traffic is the likely culprit, not a cold one.
-            _restoreMatches = BlocksStore.Records
+            _restoreMatches = BlocksStore.Default.Records
                 .Where(r => r.Status != "off" && ServiceOutageMap.Matches(sym, r))
                 .Select(r => (r, utc: _trafficCache.TryGetValue(r.Kind + r.Key, out var h) && h != null ? h.Value.utc : (DateTime?)null))
                 .OrderByDescending(x => x.utc ?? DateTime.MinValue)
@@ -422,7 +422,7 @@ namespace AutoScope.Views
 
         private static string GroupLabel(BlockRecord r)
         {
-            string key = BlocksStore.ServiceGroupKey(r);
+            string key = BlocksStore.Default.ServiceGroupKey(r);
             return ServiceCatalog.TryGet(key, out var c) ? c.DisplayName : key;
         }
 
@@ -456,8 +456,8 @@ namespace AutoScope.Views
             var list = _restoreMatches.Select(v => (v.Record.Kind, v.Record.Key)).ToList();
             var (matched, changed) = await AutoScope.Services.Fw.Service.SetTargetsEnabledAsync(list, false);
             foreach (var v in _restoreMatches)
-                BlocksStore.SetStatus(v.Record.Kind, v.Record.Key, "off", "restore-guide");
-            BlocksStore.AppendEvent("paused", "-", "-",
+                BlocksStore.Default.SetStatus(v.Record.Kind, v.Record.Key, "off", "restore-guide");
+            BlocksStore.Default.AppendEvent("paused", "-", "-",
                 $"restore '{sym.Title}': {changed}/{matched} rules", "restore-guide");
             await ReloadAsync();
         }
@@ -470,8 +470,8 @@ namespace AutoScope.Views
             bool enable = !vm.RulesEnabled;
             var (matched, changed) = await AutoScope.Services.Fw.Service.SetTargetsEnabledAsync(
                 new[] { (vm.Record.Kind, vm.Record.Key) }, enable);
-            BlocksStore.SetStatus(vm.Record.Kind, vm.Record.Key, enable ? "on" : "off");
-            BlocksStore.AppendEvent(enable ? "resumed" : "paused", vm.Record.Kind, vm.Record.Key,
+            BlocksStore.Default.SetStatus(vm.Record.Kind, vm.Record.Key, enable ? "on" : "off");
+            BlocksStore.Default.AppendEvent(enable ? "resumed" : "paused", vm.Record.Kind, vm.Record.Key,
                 $"{changed}/{matched} rules", "blocks-tab");
             await ReloadAsync();
         }
@@ -495,8 +495,8 @@ namespace AutoScope.Views
 
             var targetsList = g.Rows.Select(r => (r.Record.Kind, r.Record.Key)).ToList();
             var (matched, changed) = await AutoScope.Services.Fw.Service.SetTargetsEnabledAsync(targetsList, enable);
-            BlocksStore.SetStatusForGroup(g.ServiceKey, enable ? "on" : "off");
-            BlocksStore.AppendEvent(enable ? "resumed" : "paused", "-", "-",
+            BlocksStore.Default.SetStatusForGroup(g.ServiceKey, enable ? "on" : "off");
+            BlocksStore.Default.AppendEvent(enable ? "resumed" : "paused", "-", "-",
                 $"{g.DisplayName}: {changed}/{matched} rules", "blocks-tab");
             await ReloadAsync();
         }
@@ -512,7 +512,7 @@ namespace AutoScope.Views
             int removed = vm.Record.IsIp
                 ? await AutoScope.Services.Fw.Service.RemoveBlockRulesForIpAsync(vm.Record.Key)
                 : await AutoScope.Services.Fw.Service.RemoveBlockRulesForAppAsync(vm.Record.Key);
-            BlocksStore.Remove(vm.Record.Kind, vm.Record.Key, "blocks-tab");
+            BlocksStore.Default.Remove(vm.Record.Kind, vm.Record.Key, "blocks-tab");
             _trafficCache.Remove(vm.Record.Kind + vm.Record.Key);
             await ReloadAsync();
         }

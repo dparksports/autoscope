@@ -64,7 +64,7 @@ namespace AutoScope.Services
                     $"{ignored} ignored process(es) from AutoCommand. Delete this file to re-run.");
 
                 if (blocks > 0)
-                    BlocksStore.AppendEvent("migrated", "-", "-",
+                    BlocksStore.Default.AppendEvent("migrated", "-", "-",
                         $"{blocks} block record(s) imported from AutoCommand — AC-BLOCK rules adopted in place",
                         "migration");
             }
@@ -82,7 +82,7 @@ namespace AutoScope.Services
 
         /// <summary>
         /// Copies/merges AutoCommand's blocks.txt into ours at the FILE
-        /// level, before BlocksStore loads anything. BlocksStore.Load() is a
+        /// level, before BlocksStore loads anything. BlocksStore.Default.Load() is a
         /// one-shot lazy parse of the v3 pipe format, so a straight file
         /// merge is both simpler and exactly format-preserving (attribution,
         /// history, unrecognized lines all survive verbatim).
@@ -95,10 +95,10 @@ namespace AutoScope.Services
                 if (!File.Exists(acStore)) return 0;
 
                 Directory.CreateDirectory(DataDir);
-                string mine = BlocksStore.StorePath;
+                string mine = BlocksStore.Default.StorePath;
 
                 // v3 line: v3|kind|key|... — identity is (kind, key), same as
-                // BlocksStore.AddOrUpdate's dedupe
+                // BlocksStore.Default.AddOrUpdate's dedupe
                 static string LineKey(string l)
                 {
                     var parts = l.Split('|');

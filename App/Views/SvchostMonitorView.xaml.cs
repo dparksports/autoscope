@@ -998,7 +998,7 @@ namespace AutoScope.Views
             };
         }
 
-        // WinUI port: BlocksStore.ClassForPath is internal to the Core
+        // WinUI port: BlocksStore.Default.ClassForPath is internal to the Core
         // assembly — local copy of its logic so the record stays identical
         private static string ClassForPath(string path)
         {
@@ -1276,7 +1276,7 @@ namespace AutoScope.Views
                     ? await AutoScope.Services.Fw.Service.RemoveBlockRulesForIpAsync(key)
                     : await AutoScope.Services.Fw.Service.RemoveBlockRulesForAppAsync(key);
 
-                BlocksStore.Remove(kind, key);
+                BlocksStore.Default.Remove(kind, key);
                 RefreshBlockedUi();
                 _ = RefreshBlockStateFromFirewallAsync();
                 ShowToast(removed > 0
@@ -1656,24 +1656,24 @@ namespace AutoScope.Views
         }
 
         // -----------------------------------------------------------------------
-        // Block records — BlocksStore v3 persistence (see BlocksStore.cs)
+        // Block records — BlocksStore v3 persistence (see BlocksStore.Default.cs)
         // -----------------------------------------------------------------------
 
         private void RecordBlockedEntry(SvchostMonitorItem item, string kind, string key)
         {
-            BlocksStore.AddOrUpdate(BuildBlockRecord(item, kind, key));
+            BlocksStore.Default.AddOrUpdate(BuildBlockRecord(item, kind, key));
             RefreshBlockedUi();
         }
 
         private void LoadBlockedEntries()
         {
-            BlocksStore.Load(); // migrates legacy blocked.txt files once, in place
+            BlocksStore.Default.Load(); // migrates legacy blocked.txt files once, in place
             RefreshBlockedUi();
         }
 
         private void RefreshBlockedUi()
         {
-            var records = BlocksStore.Records;
+            var records = BlocksStore.Default.Records;
             BlockedListBtn.Content = $"Blocked: {records.Count}";
             BlockedListBox.ItemsSource = records
                 .OrderBy(b => b.Kind).ThenBy(b => b.Key, StringComparer.OrdinalIgnoreCase)
