@@ -20,11 +20,13 @@ type FirewallNaming =
 
 module Naming =
     /// AutoScope's policy: creates AS-BLOCK, adopts AutoCommand's AC-BLOCK
-    /// in place, still honors its own pre-v3 legacy names.
+    /// and AutoTrack's AT-BLOCK in place (mutual adoption — any of the three
+    /// apps' panic buttons restores everything), still honors its own
+    /// pre-v3 legacy names.
     let autoscope () =
         { OwnIpPrefix = "AS-BLOCK-IP "
           OwnAppPrefix = "AS-BLOCK-APP "
-          AdoptedPrefixes = [ "AC-BLOCK-IP "; "AC-BLOCK-APP " ]
+          AdoptedPrefixes = [ "AC-BLOCK-IP "; "AC-BLOCK-APP "; "AT-BLOCK-IP "; "AT-BLOCK-APP " ]
           LegacyIpPrefixes = [ "AutoScope IP Block - " ]
           LegacyAppPrefixes = [ "AutoScope Process Block - " ]
           UserBlockDescription = "AutoScope User Block" }
