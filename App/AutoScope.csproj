@@ -11,7 +11,7 @@
     <RootNamespace>AutoScope</RootNamespace>
     <AssemblyName>AutoScope</AssemblyName>
     <Product>AutoScope</Product>
-    <Version>2026.10.25</Version>
+    <Version>2026.10.26</Version>
     <!-- clean version string on the status bar / serverInfo -->
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>

@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>AutoScope.Engines.Bridge</RootNamespace>
-    <Version>2026.10.25</Version>
+    <Version>2026.10.26</Version>
     <Nullable>disable</Nullable>
   </PropertyGroup>
   <ItemGroup>
