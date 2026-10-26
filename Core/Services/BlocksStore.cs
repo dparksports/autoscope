@@ -1,4 +1,6 @@
 using System;
+using AutoScope.Engines.Firewall;
+using AutoScope.Engines.Core;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -265,7 +267,7 @@ namespace AutoScope.Services
                 Kind = p[0], Key = p[1], ProcessName = p[2],
                 CreatedUtc = ts.ToUniversalTime(), StatusUtc = ts.ToUniversalTime(),
                 Origin = "migration", Attrib = "none",
-                ClassAtBlock = p[0] == "ip" ? IpClassifier.Classify(p[1]) : ClassForPath(p[1]),
+                ClassAtBlock = p[0] == "ip" ? IpClassification.Classify(p[1]) : ClassForPath(p[1]),
             };
             SeedServiceFromLabel(r);
             return r;
@@ -284,7 +286,7 @@ namespace AutoScope.Services
                 Kind = "ip", Key = ip, ProcessName = proc,
                 CreatedUtc = ts.ToUniversalTime(), StatusUtc = ts.ToUniversalTime(),
                 Origin = "migration", Attrib = "none",
-                ClassAtBlock = IpClassifier.Classify(ip),
+                ClassAtBlock = IpClassification.Classify(ip),
             };
             SeedServiceFromLabel(r);
             return r;
@@ -371,9 +373,9 @@ namespace AutoScope.Services
         /// migration snapshot. Returns how many records were adopted.
         /// </summary>
         public static async System.Threading.Tasks.Task<int> ReconcileWithFirewallAsync(
-            System.Collections.Generic.List<FirewallService.BlockedTarget> inventory = null)
+            System.Collections.Generic.List<BlockedTarget> inventory = null)
         {
-            inventory ??= await FirewallService.Instance.GetBlockedInventoryAsync();
+            inventory ??= await AutoScope.Services.Fw.Service.GetBlockedInventoryAsync();
             int added = 0;
             var known = new System.Collections.Generic.HashSet<string>(
                 Records.Select(r => (r.IsIp ? "ip:" : "app:") + r.Key.ToLowerInvariant()),
@@ -388,7 +390,7 @@ namespace AutoScope.Services
                     ProcessName = System.IO.Path.GetFileName(t.AppPath ?? ""),
                     CreatedUtc = t.Created ?? DateTime.UtcNow,
                     StatusUtc = t.Created ?? DateTime.UtcNow,
-                    ClassAtBlock = t.Kind == "ip" ? IpClassifier.Classify(t.Ip) : ClassForPath(t.AppPath ?? ""),
+                    ClassAtBlock = t.Kind == "ip" ? IpClassification.Classify(t.Ip) : ClassForPath(t.AppPath ?? ""),
                     Origin = "reconcile",
                     Attrib = "none",
                 };

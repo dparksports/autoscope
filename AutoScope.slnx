@@ -11,6 +11,7 @@
   <Folder Name="/Engines/">
     <Project Path="Engines/Engines.Core/Engines.Core.fsproj" />
     <Project Path="Engines/Engines.Diagnosis/Engines.Diagnosis.fsproj" />
+    <Project Path="Engines/Engines.Firewall/Engines.Firewall.fsproj" />
   </Folder>
   <Project Path="SiteDoctorSelfTest/SiteDoctorSelfTest.csproj" />
 </Solution>

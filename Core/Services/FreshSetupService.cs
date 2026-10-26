@@ -1,4 +1,6 @@
 using System;
+using AutoScope.Engines.Firewall;
+using AutoScope.Engines.Core;
 using System.Collections.Generic;
 using System.Linq;
 using System.Management;
@@ -104,8 +106,8 @@ namespace AutoScope.Services
                             Description = "Disables every grouped firewall rule, then re-enables only the whitelists (mDNS, Core Networking).",
                             Apply = async progress =>
                             {
-                                var result = await FirewallProfileService.Instance.ApplyProfile(
-                                    FirewallProfileService.ProfileType.ShieldsUpMdns, progress);
+                                var result = await AutoScope.Services.Fw.Profiles.ApplyProfile(
+                                    ProfileType.ShieldsUpMdns, progress);
                                 return (true, $"Applied — {result.TotalChanged} rule(s) changed, {result.TotalFailed} failed");
                             },
                             Verify = async () =>

@@ -1,4 +1,6 @@
 using System;
+using AutoScope.Engines.Firewall;
+using AutoScope.Engines.Core;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -352,7 +354,7 @@ namespace AutoScope.Services
                     return;
                 }
 
-                string classified = IpClassifier.Classify(ip);
+                string classified = IpClassification.Classify(ip);
                 if (classified != "Unclassified")
                     record.Provider = classified;
 

@@ -1,4 +1,6 @@
 using System;
+using AutoScope.Engines.Firewall;
+using AutoScope.Engines.Core;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
@@ -620,7 +622,7 @@ namespace AutoScope.Services
                         string owner = null;
                         foreach (string ip in ips.Take(4))
                         {
-                            string classified = IpClassifier.Classify(ip);
+                            string classified = IpClassification.Classify(ip);
                             if (classified != "Unclassified" && classified != "IPv6/other")
                             {
                                 owner = classified == "Microsoft" || classified == "Azure"

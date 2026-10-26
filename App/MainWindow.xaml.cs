@@ -1,4 +1,6 @@
 using System;
+using AutoScope.Engines.Firewall;
+using AutoScope.Engines.Core;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.UI.Xaml;
@@ -224,8 +226,8 @@ namespace AutoScope
             RestoreInternetBtn.IsEnabled = false;
             try
             {
-                var result = await FirewallService.Instance
-                    .SetAllAutoScopeBlocksEnabledAsync(false);
+                var result = await AutoScope.Services.Fw.Service
+                    .SetAllBlocksEnabledAsync(false);
 
                 // A stale DNS cache keeps sites dead even after the block is
                 // lifted — flush it automatically so recovery is one click.

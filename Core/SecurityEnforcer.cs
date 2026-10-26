@@ -1,4 +1,6 @@
 using System;
+using AutoScope.Engines.Firewall;
+using AutoScope.Engines.Core;
 using System.Diagnostics;
 using System.Linq;
 using System.Management;
@@ -195,7 +197,7 @@ namespace AutoScope
         {
             try
             {
-                var overrides = Helpers.FirewallConfigManager.Instance.RuleOverrides;
+                var overrides = AutoScope.Services.Fw.Config.RuleOverrides;
                 if (overrides.Count == 0) return;
 
                 // Use COM API to apply overrides
@@ -225,13 +227,13 @@ namespace AutoScope
             try
             {
                 // While paused the user is (or was) editing rules by hand — adopt, don't fight
-                if (Helpers.FirewallBaselineManager.PausedUntilUtc > DateTime.UtcNow)
+                if (AutoScope.Services.Fw.Baseline.PausedUntilUtc > DateTime.UtcNow)
                     return;
 
-                var overrides = Helpers.FirewallConfigManager.Instance.RuleOverrides;
+                var overrides = AutoScope.Services.Fw.Config.RuleOverrides;
                 if (overrides.Count > 0)
                 {
-                    var driftItems = await Services.FirewallService.Instance.CheckDriftAsync(overrides);
+                    var driftItems = await AutoScope.Services.Fw.Service.CheckDriftAsync(overrides);
                     if (driftItems.Count > 0)
                     {
                         ConfigurationDriftDetected?.Invoke(driftItems);
@@ -241,9 +243,9 @@ namespace AutoScope
                 // Whole-firewall baseline drift — detects rules re-enabled after a
                 // reboot or Windows Update, and new rules sneaking in. Restores the
                 // baseline when Auto-Mitigate is on; otherwise alerts (debounced).
-                if (Helpers.FirewallBaselineManager.HasBaseline)
+                if (AutoScope.Services.Fw.Baseline.HasBaseline)
                 {
-                    var drift = await Helpers.FirewallBaselineManager.GetDriftAsync();
+                    var drift = await AutoScope.Services.Fw.Baseline.GetDriftAsync();
                     int problems = drift.ReEnabled.Count + drift.SneakedIn.Count + drift.UnexpectedlyDisabled.Count;
                     if (problems > 0 && DateTime.UtcNow - _lastFirewallDriftAlertUtc >= DriftAlertDebounce)
                     {
@@ -253,9 +255,9 @@ namespace AutoScope
                         {
                             int fixedCount = 0;
                             if (drift.ReEnabled.Count > 0)
-                                fixedCount += await Helpers.FirewallBaselineManager.ReDisableAsync(drift.ReEnabled);
+                                fixedCount += await AutoScope.Services.Fw.Baseline.ReDisableAsync(drift.ReEnabled);
                             if (drift.UnexpectedlyDisabled.Count > 0)
-                                fixedCount += await Helpers.FirewallBaselineManager.RestoreEnableAsync(drift.UnexpectedlyDisabled);
+                                fixedCount += await AutoScope.Services.Fw.Baseline.RestoreEnableAsync(drift.UnexpectedlyDisabled);
 
                             // New rules: grouped ones violate the applied profile's end
                             // state (e.g. Shields Up) — block those; ungrouped ones are
@@ -264,7 +266,7 @@ namespace AutoScope
                                 .Where(s => !string.IsNullOrEmpty(s.Item2))
                                 .Select(s => s.Item1).ToList();
                             if (groupedSneaks.Count > 0)
-                                fixedCount += await Helpers.FirewallBaselineManager.ReDisableAsync(groupedSneaks);
+                                fixedCount += await AutoScope.Services.Fw.Baseline.ReDisableAsync(groupedSneaks);
 
                             _onThreatDetected?.Invoke("Firewall Drift",
                                 $"{problems} drifted rule(s) detected; {fixedCount} restored to baseline.");

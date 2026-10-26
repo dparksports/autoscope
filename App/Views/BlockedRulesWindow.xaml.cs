@@ -1,4 +1,6 @@
 using System;
+using AutoScope.Engines.Firewall;
+using AutoScope.Engines.Core;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -86,12 +88,12 @@ namespace AutoScope.Views
                 // auto-migrate legacy-name rules on open — lossless (provenance
                 // carries over, protection unchanged), so users never have to
                 // know or care about the old naming scheme
-                int legacy = await FirewallService.Instance.CountLegacyBlocksAsync();
+                int legacy = await AutoScope.Services.Fw.Service.CountLegacyBlocksAsync();
                 if (legacy > 0)
                 {
                     StatusText.Text = $"Migrating {legacy} legacy firewall rule(s) to the current naming scheme…";
-                    var r = await FirewallService.Instance.ConsolidateLegacyIpBlocksAsync();
-                    _migrationNote = $"Auto-migrated {r.migratedOutbound} legacy rule(s) ({r.removedInbound} redundant inbound rules removed) across {r.targets} target(s). ";
+                    var r = await AutoScope.Services.Fw.Service.ConsolidateLegacyIpBlocksAsync();
+                    _migrationNote = $"Auto-migrated {r.Item3} legacy rule(s) ({r.Item2} redundant inbound rules removed) across {r.Item1} target(s). ";
                 }
                 await ReloadAsync();
             };
@@ -104,7 +106,7 @@ namespace AutoScope.Views
         private async Task ReloadAsync()
         {
             StatusText.Text = "Scanning firewall…";
-            var inv = await FirewallService.Instance.GetBlockedInventoryAsync();
+            var inv = await AutoScope.Services.Fw.Service.GetBlockedInventoryAsync();
             var hits = await Task.Run(() => CollectHitsLastHour());
 
             _rows.Clear();
@@ -272,8 +274,8 @@ namespace AutoScope.Views
             int removed = 0;
             foreach (var r in sel)
                 removed += r.Kind == "ip"
-                    ? await FirewallService.Instance.RemoveBlockRulesForIpAsync(r.Ip)
-                    : await FirewallService.Instance.RemoveBlockRulesForAppAsync(r.AppPath);
+                    ? await AutoScope.Services.Fw.Service.RemoveBlockRulesForIpAsync(r.Ip)
+                    : await AutoScope.Services.Fw.Service.RemoveBlockRulesForAppAsync(r.AppPath);
             StatusText.Text = $"Removed {removed} firewall rule(s).";
             await ReloadAsync();
         }
@@ -291,8 +293,8 @@ namespace AutoScope.Views
             int removed = 0;
             foreach (var r in risky)
                 removed += r.Kind == "ip"
-                    ? await FirewallService.Instance.RemoveBlockRulesForIpAsync(r.Ip)
-                    : await FirewallService.Instance.RemoveBlockRulesForAppAsync(r.AppPath);
+                    ? await AutoScope.Services.Fw.Service.RemoveBlockRulesForIpAsync(r.Ip)
+                    : await AutoScope.Services.Fw.Service.RemoveBlockRulesForAppAsync(r.AppPath);
             StatusText.Text = $"Removed {removed} rule(s) blocking Microsoft/Windows infrastructure.";
             await ReloadAsync();
         }
@@ -304,7 +306,7 @@ namespace AutoScope.Views
                 "current 2-rule scheme (outbound TCP+UDP): inbound pair deleted, outbound pair renamed with\n" +
                 "provenance preserved. No protection is lost — inbound was already covered by stateful filtering.")) return;
 
-            var (targets, removedIn, migratedOut) = await FirewallService.Instance.ConsolidateLegacyIpBlocksAsync();
+            var (targets, removedIn, migratedOut) = await AutoScope.Services.Fw.Service.ConsolidateLegacyIpBlocksAsync();
             StatusText.Text = $"Consolidated {targets} target(s): {removedIn} redundant inbound rule(s) deleted, {migratedOut} migrated to v2 naming.";
             await ReloadAsync();
         }
@@ -313,7 +315,7 @@ namespace AutoScope.Views
         {
             if (!await Dialogs.ConfirmAsync("Re-enable",
                 "Re-enable ALL AutoScope block rules? (Undoes 'Restore Internet'.)")) return;
-            var res = await FirewallService.Instance.SetAllAutoScopeBlocksEnabledAsync(true);
+            var res = await AutoScope.Services.Fw.Service.SetAllBlocksEnabledAsync(true);
             StatusText.Text = $"Re-enabled AutoScope blocks ({res.Changed} rule(s) changed).";
             await ReloadAsync();
         }
@@ -333,7 +335,7 @@ namespace AutoScope.Views
             preview.AppendLine("individually anytime if you truly want them blocked.");
             if (!await Dialogs.ConfirmAsync("Restore except Microsoft/Windows ⚠", preview.ToString())) return;
 
-            var res = await FirewallService.Instance.SetAllAutoScopeBlocksEnabledAsync(true, skipRisky: true);
+            var res = await AutoScope.Services.Fw.Service.SetAllBlocksEnabledAsync(true, skipRisky: true);
             StatusText.Text = $"Restored {res.Changed} rule(s); kept {res.SkippedRisky} risky rule(s) disabled.";
             await ReloadAsync();
         }

@@ -1,4 +1,6 @@
 using System;
+using AutoScope.Engines.Firewall;
+using AutoScope.Engines.Core;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -121,7 +123,7 @@ namespace AutoScope.Services
         {
             try
             {
-                var inv = await FirewallService.Instance.GetBlockedInventoryAsync();
+                var inv = await AutoScope.Services.Fw.Service.GetBlockedInventoryAsync();
                 var ips = new Dictionary<string, BlockedInfo>(StringComparer.OrdinalIgnoreCase);
                 var apps = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var t in inv)

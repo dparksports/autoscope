@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using AutoScope.Engines.Firewall;
+using AutoScope.Engines.Core;
 using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
 using System.IO;
@@ -174,7 +176,7 @@ namespace AutoScope.Services
                        ("reason", "Why — stored in the rule's provenance description", false)),
                 true,
                 a => BlockIp(a).GetAwaiter().GetResult(),
-                a => $"Create outbound firewall BLOCK rules for {a["ip"]}?\n\n{IpClassifier.WarningText(a["ip"]?.GetValue<string>())}" +
+                a => $"Create outbound firewall BLOCK rules for {a["ip"]}?\n\n{IpClassification.WarningText(a["ip"]?.GetValue<string>())}" +
                      ReasonSuffix(a)),
 
             new Tool(
@@ -184,7 +186,7 @@ namespace AutoScope.Services
                 true,
                 a =>
                 {
-                    int n = FirewallService.Instance.RemoveBlockRulesForIpAsync(a["ip"]?.GetValue<string>())
+                    int n = AutoScope.Services.Fw.Service.RemoveBlockRulesForIpAsync(a["ip"]?.GetValue<string>())
                                    .GetAwaiter().GetResult();
                     return $"Removed {n} rule(s).";
                 },
@@ -544,9 +546,9 @@ namespace AutoScope.Services
             var o = new JsonObject
             {
                 ["ip"] = ip,
-                ["classification"] = IpClassifier.Classify(ip),
-                ["microsoft_infra"] = IpClassifier.IsMicrosoftInfra(ip),
-                ["block_warning"] = IpClassifier.WarningText(ip),
+                ["classification"] = IpClassification.Classify(ip),
+                ["microsoft_infra"] = IpClassification.IsMicrosoftInfra(ip),
+                ["block_warning"] = IpClassification.WarningText(ip),
                 ["blocked"] = blocked != null,
             };
             if (blocked != null)
@@ -571,7 +573,7 @@ namespace AutoScope.Services
         {
             int minutes = Math.Clamp(a["minutes"]?.GetValue<int>() ?? 60, 1, 24 * 60);
             EnsureFeedStarted();
-            var inv = FirewallService.Instance.GetBlockedInventoryAsync().GetAwaiter().GetResult();
+            var inv = AutoScope.Services.Fw.Service.GetBlockedInventoryAsync().GetAwaiter().GetResult();
             var feedHits = BlockHitFeedService.Instance.FeedHitsByIp(minutes);
 
             var arr = new JsonArray();
@@ -694,7 +696,7 @@ namespace AutoScope.Services
                 rows.Add(new JsonObject
                 {
                     ["ip"] = ip,
-                    ["classification"] = IpClassifier.Classify(ip),
+                    ["classification"] = IpClassification.Classify(ip),
                     ["blocked"] = b != null,
                     ["blocked_since"] = b?.Created?.ToString("yyyy-MM-dd HH:mm"),
                     [$"blocked_attempts_{minutes}m"] = hits,
@@ -938,7 +940,7 @@ namespace AutoScope.Services
             string reason = a["reason"]?.GetValue<string>();
             string note = $"[agent request, user-confirmed {DateTime.UtcNow:yyyy-MM-dd HH:mm} UTC]" +
                           (string.IsNullOrEmpty(reason) ? "" : $" {reason}") + " · AutoScope AI access";
-            var (created, updated) = await FirewallService.Instance.AddIpBlockAsync(ip, note);
+            var (created, updated) = await AutoScope.Services.Fw.Service.AddIpBlockAsync(ip, note);
             return created > 0
                 ? $"Blocked {ip} — {created} outbound TCP/UDP rule(s) created, provenance written to the rule description."
                 : $"Block for {ip} already existed — refreshed its provenance ({updated} rule(s)).";

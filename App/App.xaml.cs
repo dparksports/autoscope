@@ -86,7 +86,7 @@ namespace AutoScope
                 await System.Threading.Tasks.Task.Run(() =>
                 {
                     // one-shot ever: make pfirewall.log a usable second hit source
-                    Services.FirewallService.EnsureDropLoggingOnce();
+                    AutoScope.Engines.Firewall.FirewallService.EnsureDropLoggingOnce();
 
                     var installer = new SysmonInstallerService();
                     if (installer.DetectInstallState() != SysmonInstallState.Installed)

@@ -1,4 +1,6 @@
 using System;
+using AutoScope.Engines.Firewall;
+using AutoScope.Engines.Core;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.UI.Xaml;
@@ -144,7 +146,7 @@ namespace AutoScope.Views
                 // Firewall truth (background): which targets have rules, and
                 // are they enabled. The store carries identity/history; the
                 // firewall carries effect.
-                var inventory = await FirewallService.Instance.GetBlockedInventoryAsync();
+                var inventory = await AutoScope.Services.Fw.Service.GetBlockedInventoryAsync();
                 var byKey = inventory.ToDictionary(
                     t => t.Key, t => t, StringComparer.OrdinalIgnoreCase);
 
@@ -450,7 +452,7 @@ namespace AutoScope.Views
             if (!proceed) return;
 
             var list = _restoreMatches.Select(v => (v.Record.Kind, v.Record.Key)).ToList();
-            var (matched, changed) = await FirewallService.Instance.SetTargetsEnabledAsync(list, false);
+            var (matched, changed) = await AutoScope.Services.Fw.Service.SetTargetsEnabledAsync(list, false);
             foreach (var v in _restoreMatches)
                 BlocksStore.SetStatus(v.Record.Kind, v.Record.Key, "off", "restore-guide");
             BlocksStore.AppendEvent("paused", "-", "-",
@@ -464,7 +466,7 @@ namespace AutoScope.Views
         {
             if ((sender as FrameworkElement)?.Tag is not BlockRowVm vm) return;
             bool enable = !vm.RulesEnabled;
-            var (matched, changed) = await FirewallService.Instance.SetTargetsEnabledAsync(
+            var (matched, changed) = await AutoScope.Services.Fw.Service.SetTargetsEnabledAsync(
                 new[] { (vm.Record.Kind, vm.Record.Key) }, enable);
             BlocksStore.SetStatus(vm.Record.Kind, vm.Record.Key, enable ? "on" : "off");
             BlocksStore.AppendEvent(enable ? "resumed" : "paused", vm.Record.Kind, vm.Record.Key,
@@ -490,7 +492,7 @@ namespace AutoScope.Views
             if (!proceed) return;
 
             var targetsList = g.Rows.Select(r => (r.Record.Kind, r.Record.Key)).ToList();
-            var (matched, changed) = await FirewallService.Instance.SetTargetsEnabledAsync(targetsList, enable);
+            var (matched, changed) = await AutoScope.Services.Fw.Service.SetTargetsEnabledAsync(targetsList, enable);
             BlocksStore.SetStatusForGroup(g.ServiceKey, enable ? "on" : "off");
             BlocksStore.AppendEvent(enable ? "resumed" : "paused", "-", "-",
                 $"{g.DisplayName}: {changed}/{matched} rules", "blocks-tab");
@@ -506,8 +508,8 @@ namespace AutoScope.Views
             if (!proceed) return;
 
             int removed = vm.Record.IsIp
-                ? await FirewallService.Instance.RemoveBlockRulesForIpAsync(vm.Record.Key)
-                : await FirewallService.Instance.RemoveBlockRulesForAppAsync(vm.Record.Key);
+                ? await AutoScope.Services.Fw.Service.RemoveBlockRulesForIpAsync(vm.Record.Key)
+                : await AutoScope.Services.Fw.Service.RemoveBlockRulesForAppAsync(vm.Record.Key);
             BlocksStore.Remove(vm.Record.Kind, vm.Record.Key, "blocks-tab");
             _trafficCache.Remove(vm.Record.Kind + vm.Record.Key);
             await ReloadAsync();

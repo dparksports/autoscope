@@ -1,4 +1,6 @@
 using System;
+using AutoScope.Engines.Firewall;
+using AutoScope.Engines.Core;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,7 +25,7 @@ namespace AutoScope.Views
     /// </summary>
     public partial class FirewallSettingsView : Page, IAiAuditable
     {
-        private List<FirewallRuleItem> _currentRules = new();
+        private List<RuleInfo> _currentRules = new();
 
         public FirewallSettingsView()
         {
@@ -44,17 +46,17 @@ namespace AutoScope.Views
 
         private async Task UpdateBaselineStatusAsync()
         {
-            var info = FirewallBaselineManager.BaselineInfo;
-            if (FirewallBaselineManager.IsPaused)
+            var info = AutoScope.Services.Fw.Baseline.BaselineInfo;
+            if (AutoScope.Services.Fw.Baseline.IsPaused)
             {
-                BaselineStatusText.Text = $"Baseline auto-fix PAUSED until {FirewallBaselineManager.PausedUntilUtc.ToLocalTime():HH:mm}"
-                                          + (info == null ? "" : $" — baseline has {info.Value.Count} rules");
+                BaselineStatusText.Text = $"Baseline auto-fix PAUSED until {AutoScope.Services.Fw.Baseline.PausedUntilUtc.ToLocalTime():HH:mm}"
+                                          + (info == null ? "" : $" — baseline has {info.Value.Item2} rules");
             }
             else
             {
                 BaselineStatusText.Text = info == null
                     ? "No baseline — apply a profile or click Re-baseline to capture one"
-                    : $"Baseline: {info.Value.Count} rules (captured {info.Value.CapturedAt:yyyy-MM-dd HH:mm})";
+                    : $"Baseline: {info.Value.Item2} rules (captured {info.Value.Item1:yyyy-MM-dd HH:mm})";
             }
         }
 
@@ -63,7 +65,7 @@ namespace AutoScope.Views
             RebaselineBtn.IsEnabled = false;
             try
             {
-                var (count, at) = await FirewallBaselineManager.CaptureBaselineAsync();
+                var (count, at) = await AutoScope.Services.Fw.Baseline.CaptureBaselineAsync();
                 BaselineStatusText.Text = $"Baseline: {count} rules (captured {at:yyyy-MM-dd HH:mm})";
             }
             finally
@@ -74,7 +76,7 @@ namespace AutoScope.Views
 
         private async void PauseEnforcementBtn_Click(object sender, RoutedEventArgs e)
         {
-            FirewallBaselineManager.PauseForMinutes(15);
+            AutoScope.Services.Fw.Baseline.PauseForMinutes(15);
             await UpdateBaselineStatusAsync();
         }
 
@@ -93,11 +95,11 @@ namespace AutoScope.Views
             ProfileStatusText.Text = "Renaming legacy block rules…";
             try
             {
-                var (targets, removedIn, migrated) = await FirewallService.Instance.ConsolidateLegacyIpBlocksAsync();
+                var (targets, removedIn, migrated) = await AutoScope.Services.Fw.Service.ConsolidateLegacyIpBlocksAsync();
 
                 // Names changed — re-capture so the enforcer doesn't report the new
                 // AS-BLOCK names as drift (the baseline is keyed by rule name)
-                var (count, at) = await FirewallBaselineManager.CaptureBaselineAsync();
+                var (count, at) = await AutoScope.Services.Fw.Baseline.CaptureBaselineAsync();
                 BaselineStatusText.Text = $"Baseline: {count} rules (captured {at:yyyy-MM-dd HH:mm})";
 
                 ProfileStatusText.Text = $"Renamed legacy rules across {targets} target(s): "
@@ -123,7 +125,7 @@ namespace AutoScope.Views
         private async Task LoadRules()
         {
             int direction = InboundRadio.IsChecked == true ? 1 : 2;
-            _currentRules = await FirewallService.Instance.LoadRulesAsync(direction);
+            _currentRules = await AutoScope.Services.Fw.Service.LoadRulesAsync(direction);
 
             // Enabled rules first (then alphabetical) so the refreshed list reads top-down
             _currentRules = _currentRules.OrderByDescending(r => r.Enabled)
@@ -136,7 +138,7 @@ namespace AutoScope.Views
             string dir = direction == 1 ? "Inbound" : "Outbound";
             RuleCountText.Text = $"{_currentRules.Count} {dir} rules ({enabled} enabled)";
 
-            int legacy = await FirewallService.Instance.CountLegacyBlocksAsync();
+            int legacy = await AutoScope.Services.Fw.Service.CountLegacyBlocksAsync();
             RenameLegacyBtn.IsEnabled = legacy > 0;
             ToolTipService.SetToolTip(RenameLegacyBtn, legacy == 0
                 ? "No legacy-named AutoScope block rules — nothing to rename."
@@ -153,7 +155,7 @@ namespace AutoScope.Views
                 var element = src as FrameworkElement;
                 while (element != null && element is not DataGridRow)
                     element = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(element) as FrameworkElement;
-                if (element is DataGridRow row && row.DataContext is FirewallRuleItem rule)
+                if (element is DataGridRow row && row.DataContext is RuleInfo rule)
                 {
                     RulesGrid.SelectedItem = rule;
                     RuleMenu.ShowAt(RulesGrid, e.GetPosition(RulesGrid));
@@ -164,42 +166,42 @@ namespace AutoScope.Views
 
         private async void ToggleRule_Click(object sender, RoutedEventArgs e)
         {
-            if (RulesGrid.SelectedItem is not FirewallRuleItem rule) return;
+            if (RulesGrid.SelectedItem is not RuleInfo rule) return;
             bool newState = !rule.Enabled;
-            await FirewallService.Instance.ToggleRuleAsync(rule.Name, newState);
+            await AutoScope.Services.Fw.Service.ToggleRuleAsync(rule.Name, newState);
             rule.Enabled = newState;
             // Adopt the change into the baseline so the enforcer doesn't revert it
-            FirewallBaselineManager.UpdateRuleState(rule.Name, newState);
+            AutoScope.Services.Fw.Baseline.UpdateRuleState(rule.Name, newState);
             RulesGrid.ItemsSource = null;
             RulesGrid.ItemsSource = _currentRules; // WinUI port: no INotifyPropertyChanged on the model
         }
 
         private async void EnableGroup_Click(object sender, RoutedEventArgs e)
         {
-            if (RulesGrid.SelectedItem is not FirewallRuleItem rule) return;
+            if (RulesGrid.SelectedItem is not RuleInfo rule) return;
             ProfileStatusText.Text = $"Enabling group '{rule.DisplayGroup}'…";
-            var r = await FirewallService.Instance.ToggleGroupAsync(rule.DisplayGroup, true);
+            var r = await AutoScope.Services.Fw.Service.ToggleGroupAsync(rule.DisplayGroup, true);
             ProfileStatusText.Text = $"Group '{rule.DisplayGroup}': {r.Matched} matched, {r.Changed} changed, {r.Failed} failed"
                                      + (r.FirstError != null ? $" — {r.FirstError}" : "");
-            await FirewallBaselineManager.UpdateGroupStateAsync(rule.DisplayGroup, true);
+            await AutoScope.Services.Fw.Baseline.UpdateGroupStateAsync(rule.DisplayGroup, true);
             await LoadRules();
         }
 
         private async void DisableGroup_Click(object sender, RoutedEventArgs e)
         {
-            if (RulesGrid.SelectedItem is not FirewallRuleItem rule) return;
+            if (RulesGrid.SelectedItem is not RuleInfo rule) return;
             ProfileStatusText.Text = $"Disabling group '{rule.DisplayGroup}'…";
-            var r = await FirewallService.Instance.ToggleGroupAsync(rule.DisplayGroup, false);
+            var r = await AutoScope.Services.Fw.Service.ToggleGroupAsync(rule.DisplayGroup, false);
             ProfileStatusText.Text = $"Group '{rule.DisplayGroup}': {r.Matched} matched, {r.Changed} changed, {r.Failed} failed"
                                      + (r.FirstError != null ? $" — {r.FirstError}" : "");
-            await FirewallBaselineManager.UpdateGroupStateAsync(rule.DisplayGroup, false);
+            await AutoScope.Services.Fw.Baseline.UpdateGroupStateAsync(rule.DisplayGroup, false);
             await LoadRules();
         }
 
         private async void SaveToConfig_Click(object sender, RoutedEventArgs e)
         {
-            if (RulesGrid.SelectedItem is not FirewallRuleItem rule) return;
-            FirewallConfigManager.Instance.SetOverride(rule.Name, rule.Enabled);
+            if (RulesGrid.SelectedItem is not RuleInfo rule) return;
+            AutoScope.Services.Fw.Config.SetOverride(rule.Name, rule.Enabled);
             await Dialogs.ShowInfoAsync("Config Saved",
                 $"Saved: {rule.DisplayName} = {(rule.Enabled ? "Enabled" : "Disabled")}");
         }
@@ -234,15 +236,15 @@ namespace AutoScope.Views
                 return;
             }
 
-            FirewallProfileService.ProfileType type;
+            ProfileType type;
             switch (profileName)
             {
-                case "Shields Up + mDNS": type = FirewallProfileService.ProfileType.ShieldsUpMdns; break;
-                case "Allow Discovery + Cast": type = FirewallProfileService.ProfileType.AllowDiscoveryCast; break;
-                case "Allow Sharing + Discovery + Remote Desktop": type = FirewallProfileService.ProfileType.AllowSharingDiscoveryRemoteDesktop; break;
-                case "Allow Sharing + Discovery": type = FirewallProfileService.ProfileType.AllowSharingDiscovery; break;
-                case "Block Sharing + Discovery + Remote Desktop": type = FirewallProfileService.ProfileType.BlockSharingDiscoveryRemoteDesktop; break;
-                case "Shields Up": type = FirewallProfileService.ProfileType.ShieldsUp; break;
+                case "Shields Up + mDNS": type = ProfileType.ShieldsUpMdns; break;
+                case "Allow Discovery + Cast": type = ProfileType.AllowDiscoveryCast; break;
+                case "Allow Sharing + Discovery + Remote Desktop": type = ProfileType.AllowSharingDiscoveryRemoteDesktop; break;
+                case "Allow Sharing + Discovery": type = ProfileType.AllowSharingDiscovery; break;
+                case "Block Sharing + Discovery + Remote Desktop": type = ProfileType.BlockSharingDiscoveryRemoteDesktop; break;
+                case "Shields Up": type = ProfileType.ShieldsUp; break;
                 default:
                     ProfileCombo.SelectedIndex = 0;
                     return;
@@ -256,7 +258,7 @@ namespace AutoScope.Views
 
             try
             {
-                ProfileApplyResult result = await FirewallProfileService.Instance.ApplyProfile(type, progress);
+                ProfileApplyResult result = await AutoScope.Services.Fw.Profiles.ApplyProfile(type, progress);
 
                 await LoadRules(); // Auto-refresh the grid so the new state is shown immediately
 
@@ -265,7 +267,7 @@ namespace AutoScope.Views
                 int baselineCount = 0;
                 try
                 {
-                    var (count, at) = await FirewallBaselineManager.CaptureBaselineAsync();
+                    var (count, at) = await AutoScope.Services.Fw.Baseline.CaptureBaselineAsync();
                     baselineCount = count;
                     BaselineStatusText.Text = $"Baseline: {count} rules (captured {at:yyyy-MM-dd HH:mm})";
                 }

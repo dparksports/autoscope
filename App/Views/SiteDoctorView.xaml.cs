@@ -1,4 +1,5 @@
 using System;
+using AutoScope.Engines.Firewall;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -421,7 +422,7 @@ namespace AutoScope.Views
             {
                 int removed = 0;
                 foreach (string ip in targets)
-                    removed += await FirewallService.Instance.RemoveBlockRulesForIpAsync(ip);
+                    removed += await AutoScope.Services.Fw.Service.RemoveBlockRulesForIpAsync(ip);
                 _unblockTargets = null;
                 UnblockBtn.Visibility = Visibility.Collapsed;
                 ProgressText.Text =

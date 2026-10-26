@@ -1,4 +1,6 @@
 using System;
+using AutoScope.Engines.Firewall;
+using AutoScope.Engines.Core;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -985,7 +987,7 @@ namespace AutoScope.Views
                 ServiceKey = serviceKey,
                 SvcDisplayName = display,
                 ClassAtBlock = kind == "ip"
-                    ? IpClassifier.Classify(key)
+                    ? IpClassification.Classify(key)
                     : ClassForPath(key),
                 Origin = "monitor",
                 Attrib = attrib,
@@ -1029,7 +1031,7 @@ namespace AutoScope.Views
                 return;
             }
 
-            string msWarning = IpClassifier.WarningText(ip); // "" when not Microsoft infrastructure
+            string msWarning = IpClassification.WarningText(ip); // "" when not Microsoft infrastructure
             bool msApplies = msWarning.Length > 0;
 
             // Per-class suppression: the prompt is skipped only when the
@@ -1062,7 +1064,7 @@ namespace AutoScope.Views
             try
             {
                 string note = BuildProvenance(item, $"→ {ip}", confirmSuppressed);
-                var (created, updated) = await FirewallService.Instance.AddIpBlockAsync(ip, note);
+                var (created, updated) = await AutoScope.Services.Fw.Service.AddIpBlockAsync(ip, note);
                 RecordBlockedEntry(item, "ip", ip);
                 _ = RefreshBlockStateFromFirewallAsync();
                 ShowToast(created > 0
@@ -1176,7 +1178,7 @@ namespace AutoScope.Views
                     else tags = "exited";
                 }
                 string note = BuildProvenance(item, $"app: {path}", confirmSuppressed, tags);
-                var (created, updated) = await FirewallService.Instance.AddAppBlockAsync(path, note);
+                var (created, updated) = await AutoScope.Services.Fw.Service.AddAppBlockAsync(path, note);
                 RecordBlockedEntry(item, "proc", path);
                 _ = RefreshBlockStateFromFirewallAsync();
                 string toast = created > 0
@@ -1269,8 +1271,8 @@ namespace AutoScope.Views
             try
             {
                 int removed = kind == "ip"
-                    ? await FirewallService.Instance.RemoveBlockRulesForIpAsync(key)
-                    : await FirewallService.Instance.RemoveBlockRulesForAppAsync(key);
+                    ? await AutoScope.Services.Fw.Service.RemoveBlockRulesForIpAsync(key)
+                    : await AutoScope.Services.Fw.Service.RemoveBlockRulesForAppAsync(key);
 
                 BlocksStore.Remove(kind, key);
                 RefreshBlockedUi();
@@ -1546,7 +1548,7 @@ namespace AutoScope.Views
             _blockStateSyncing = true;
             try
             {
-                var inventory = await FirewallService.Instance.GetBlockedInventoryAsync();
+                var inventory = await AutoScope.Services.Fw.Service.GetBlockedInventoryAsync();
 
                 _activeIps.Clear(); _pausedIps.Clear();
                 _activeApps.Clear(); _pausedApps.Clear();
