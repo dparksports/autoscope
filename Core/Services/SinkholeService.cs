@@ -1,4 +1,6 @@
 using System;
+using AutoScope.Engines.Bridge;
+using AutoScope.Engines.Watch;
 using System.Diagnostics;
 using System.Management;
 using System.Net;

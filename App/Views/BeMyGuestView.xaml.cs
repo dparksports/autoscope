@@ -1,4 +1,6 @@
 using System;
+using AutoScope.Engines.Bridge;
+using AutoScope.Engines.Watch;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -58,7 +60,7 @@ namespace AutoScope.Views
 
         private void RefreshAgentUi()
         {
-            var bridge = AgentBridgeService.Instance;
+            var bridge = AgentBridgeService.Shared;
             bool running = bridge.IsRunning;
             StartAgentBtn.IsEnabled = !running;
             StopAgentBtn.IsEnabled = running;
@@ -66,7 +68,7 @@ namespace AutoScope.Views
                 ? $"Session ACTIVE · 127.0.0.1:{bridge.Port} · client: {bridge.ClientName} · {bridge.ConnectedCalls} call(s)"
                 : "Session off. The assistant can connect but every tool answers 'start the session'.";
 
-            AgentActivityList.ItemsSource = AgentBridgeService.RecentActivity(30)
+            AgentActivityList.ItemsSource = AgentBridgeService.Shared.RecentActivity(30)
                 .Select(l => l.Length > 160 ? l[..160] + "…" : l)
                 .ToList();
         }
@@ -87,14 +89,14 @@ namespace AutoScope.Views
                 "Start the session?");
             if (!answer) return;
 
-            var (ok, message) = AgentBridgeService.Instance.Start(AgentMutatingCheck.IsChecked == true);
+            var (ok, message) = AgentBridgeService.Shared.Start(AgentMutatingCheck.IsChecked == true);
             if (!ok) await Dialogs.ShowInfoAsync("Be My Guest", message);
             RefreshAgentUi();
         }
 
         private void StopAgentBtn_Click(object sender, RoutedEventArgs e)
         {
-            AgentBridgeService.Instance.Stop();
+            AgentBridgeService.Shared.Stop();
             RefreshAgentUi();
         }
 
@@ -108,7 +110,7 @@ namespace AutoScope.Views
             catch { /* persistence best-effort */ }
 
             // a running session keeps its launch-time setting; say so plainly
-            if (AgentBridgeService.Instance.IsRunning)
+            if (AgentBridgeService.Shared.IsRunning)
                 await Dialogs.ShowInfoAsync("Be My Guest",
                     "Takes effect for NEW sessions. Stop and restart the session to apply it now.");
         }
@@ -121,9 +123,9 @@ namespace AutoScope.Views
         private void PopulateClientButtons()
         {
             AgentClientsPanel.Children.Clear();
-            foreach (var client in McpClientCatalog.Catalog)
+            foreach (var client in BridgeHost.Catalog.Catalog)
             {
-                bool detected = McpClientCatalog.IsDetected(client);
+                bool detected = BridgeHost.Catalog.IsDetected(client);
                 var btn = new Button
                 {
                     Content = "Register in " + client.DisplayName,
@@ -144,7 +146,7 @@ namespace AutoScope.Views
         {
             if (sender is not Button { Tag: McpClientRegistration client }) return;
 
-            var (proxy, installNote) = McpClientCatalog.ResolveAndInstallProxy();
+            var (proxy, installNote) = BridgeHost.Catalog.ResolveAndInstallProxy();
             if (proxy == null)
             {
                 await Dialogs.ShowInfoAsync("Be My Guest",
@@ -156,7 +158,7 @@ namespace AutoScope.Views
             // never point a client config at a proxy that cannot start: prove
             // it answers an MCP handshake here first, including under the
             // hostile DOTNET_ROOT that desktop MCP clients are known to export
-            var (preOk, preMsg) = McpClientCatalog.PreflightProxy(proxy);
+            var (preOk, preMsg) = BridgeHost.Catalog.PreflightProxy(proxy);
             if (!preOk)
             {
                 await Dialogs.ShowInfoAsync("Be My Guest",
@@ -165,7 +167,7 @@ namespace AutoScope.Views
                 return;
             }
 
-            var (ok, message) = McpClientCatalog.Register(client, proxy);
+            var (ok, message) = BridgeHost.Catalog.Register(client, proxy);
             if (ok) message += "\n\nPreflight passed: the installed proxy answered an MCP handshake, " +
                                "including with a hostile DOTNET_ROOT.";
             await Dialogs.ShowInfoAsync(ok ? "Registered" : "AI access", message);
@@ -173,7 +175,7 @@ namespace AutoScope.Views
 
         private async void CopyAgentConfigBtn_Click(object sender, RoutedEventArgs e)
         {
-            string proxy = McpClientCatalog.ResolveAndInstallProxy().ProxyPath
+            string proxy = BridgeHost.Catalog.ResolveAndInstallProxy().Item1
                 ?? "%LOCALAPPDATA%\\AutoScope\\tools\\AutoScope.AgentProxy.exe";
             string config =
                 "{\n  \"mcp\": {\n    \"servers\": {\n      \"autoscope\": {\n" +

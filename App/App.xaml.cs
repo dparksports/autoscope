@@ -1,4 +1,6 @@
 using Microsoft.UI.Xaml;
+using AutoScope.Engines.Bridge;
+using AutoScope.Engines.Watch;
 using AutoScope.Services;
 
 namespace AutoScope
@@ -40,6 +42,12 @@ namespace AutoScope
 
         protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
+            // Engine composition: watch engines need the app identity
+            // (data root) before first use; the bridge needs its UI seam and
+            // the tool adapter. Before anything that touches an engine.
+            AutoScope.Engines.Watch.WatchConfig.Configure(AutoScope.Engines.Core.Identity.autoscope());
+            BridgeHost.Wire();
+
             // First run: adopt an existing AutoCommand install — block records
             // and the ignored-process list merge in, and AC-BLOCK firewall
             // rules become manageable here (never renamed). Before anything

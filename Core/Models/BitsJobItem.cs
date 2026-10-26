@@ -1,4 +1,6 @@
 using System;
+using AutoScope.Engines.Bridge;
+using AutoScope.Engines.Watch;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;

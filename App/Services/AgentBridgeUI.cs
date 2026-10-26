@@ -1,4 +1,6 @@
 using System;
+using AutoScope.Engines.Bridge;
+using AutoScope.Engines.Watch;
 using System.Threading.Tasks;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
@@ -27,7 +29,8 @@ namespace AutoScope.Services
             else _dq.TryEnqueue(() => action());
         }
 
-        public async Task<(bool Allowed, bool AlwaysForTool)> ShowConfirmAsync(string tool, string detail)
+        // F# engine interface signature: F# tuples surface as Tuple<_,_>
+        public async Task<System.Tuple<bool, bool>> ShowConfirmAsync(string tool, string detail)
         {
             var alwaysCheck = new CheckBox
             {
@@ -73,7 +76,7 @@ namespace AutoScope.Services
             // The bridge waits on this answer for up to 90 s, then answers
             // 'denied (timeout)' on its own (same timing contract as WPF).
             var result = await dlg.ShowAsync();
-            return (result == ContentDialogResult.Primary, alwaysCheck.IsChecked == true);
+            return System.Tuple.Create(result == ContentDialogResult.Primary, alwaysCheck.IsChecked == true);
         }
     }
 }

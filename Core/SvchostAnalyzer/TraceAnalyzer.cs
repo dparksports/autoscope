@@ -1,4 +1,6 @@
 using System.Globalization;
+using AutoScope.Engines.Bridge;
+using AutoScope.Engines.Watch;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;

@@ -26,5 +26,7 @@
     <ProjectReference Include="..\Engines\Engines.Core\Engines.Core.fsproj" />
     <ProjectReference Include="..\Engines\Engines.Diagnosis\Engines.Diagnosis.fsproj" />
     <ProjectReference Include="..\Engines\Engines.Firewall\Engines.Firewall.fsproj" />
+    <ProjectReference Include="..\Engines\Engines.Watch\Engines.Watch.fsproj" />
+    <ProjectReference Include="..\Engines\Engines.Bridge\Engines.Bridge.fsproj" />
   </ItemGroup>
 </Project>

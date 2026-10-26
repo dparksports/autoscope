@@ -1,4 +1,6 @@
 using System;
+using AutoScope.Engines.Bridge;
+using AutoScope.Engines.Watch;
 using AutoScope.Engines.Firewall;
 using AutoScope.Engines.Core;
 using System.Collections.Generic;

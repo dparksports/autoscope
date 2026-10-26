@@ -1,4 +1,6 @@
 using System;
+using AutoScope.Engines.Bridge;
+using AutoScope.Engines.Watch;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -133,7 +135,7 @@ namespace AutoScope.Views
             // Plain-English gloss for names that mean nothing on their own
             // ("git-remote-https.exe") — the chain below shows the raw
             // parentage; this line translates it
-            IdentGloss.Text = ProcessGlossary.TryDescribe(r.ExePath ?? r.Name, out string gloss)
+            IdentGloss.Text = AutoScope.Engines.Watch.ProcessGlossary.TryDescribe(r.ExePath ?? r.Name, out string gloss)
                 ? "ℹ " + gloss
                 : null;
 

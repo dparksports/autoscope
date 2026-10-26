@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using SvchostAnalyzer.Core;
+
+
+using AutoScope.Engines.Watch;
 
 namespace AutoScope.Services
 {
@@ -194,7 +196,7 @@ namespace AutoScope.Services
             if (stem == "svchost")
             {
                 string cmd = data.TryGetValue("CommandLine", out string c) ? c : null;
-                var parsed = SvchostIdentity.Parse(cmd);
+                var parsed = AutoScope.Engines.Watch.SvchostIdentity.Parse(cmd);
                 if (!string.IsNullOrEmpty(parsed.DeclaredService))
                 {
                     string svc = parsed.DeclaredService.ToLowerInvariant();

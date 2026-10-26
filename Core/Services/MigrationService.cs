@@ -1,4 +1,6 @@
 using System;
+using AutoScope.Engines.Bridge;
+using AutoScope.Engines.Watch;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -40,7 +42,7 @@ namespace AutoScope.Services
                     if (!File.Exists(shared) && !File.Exists(restoreMarker))
                     {
                         var ours = new SysmonWatcherService(
-                            new System.Collections.Concurrent.ConcurrentDictionary<string, Models.SvchostMonitorItem>(),
+                            new System.Collections.Concurrent.ConcurrentDictionary<string, Engines.Watch.SvchostMonitorItem>(),
                             new DnsResolutionService());
                         if (ours.IgnoredProcesses.Count > 0)
                         {
@@ -138,7 +140,7 @@ namespace AutoScope.Services
                 {
                     if (!File.Exists(candidate)) continue;
                     var watcher = new SysmonWatcherService(
-                        new System.Collections.Concurrent.ConcurrentDictionary<string, Models.SvchostMonitorItem>(),
+                        new System.Collections.Concurrent.ConcurrentDictionary<string, Engines.Watch.SvchostMonitorItem>(),
                         new DnsResolutionService());
                     foreach (string line in File.ReadAllLines(candidate))
                     {

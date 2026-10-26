@@ -1,4 +1,6 @@
 using System.Linq;
+using AutoScope.Engines.Bridge;
+using AutoScope.Engines.Watch;
 
 namespace SvchostAnalyzer.Core;
 

@@ -1,4 +1,6 @@
 using System;
+using AutoScope.Engines.Bridge;
+using AutoScope.Engines.Watch;
 using AutoScope.Engines.Firewall;
 using AutoScope.Engines.Core;
 using System.Collections.Concurrent;
@@ -306,7 +308,7 @@ namespace AutoScope.Views
             MonitorStatusText.Text = "Downloading and configuring Sysmon... please wait.";
 
             var result = await _installerService.InstallAndConfigureAsync();
-            if (result.Success)
+            if (result.Item1)
             {
                 await Dialogs.ShowInfoAsync("Success", "Sysmon has been successfully installed and configured for network tracking.");
                 CheckSysmonStatus();
@@ -314,7 +316,7 @@ namespace AutoScope.Views
             }
             else
             {
-                await Dialogs.ShowInfoAsync("Error", $"Failed to install Sysmon.\n\nDetails: {result.ErrorMessage}");
+                await Dialogs.ShowInfoAsync("Error", $"Failed to install Sysmon.\n\nDetails: {result.Item2}");
                 SetupSysmonBtn.IsEnabled = true;
                 MonitorStatusText.Text = "Sysmon is not installed — install it from the Sysmon Audit tab. Network tracking will not work.";
             }
@@ -340,7 +342,7 @@ namespace AutoScope.Views
             MonitorStatusText.Text = "Repairing Sysmon... removing leftovers and reinstalling.";
             var repaired = await _installerService.RepairAsync();
 
-            if (repaired.Success)
+            if (repaired.Item1)
             {
                 await Dialogs.ShowInfoAsync("Repair complete", "Sysmon repair completed and verified. No restart was needed.");
                 CheckSysmonStatus();
@@ -348,7 +350,7 @@ namespace AutoScope.Views
                 return;
             }
 
-            if (repaired.RebootRequired)
+            if (repaired.Item3)
             {
                 bool restart = await Dialogs.ConfirmAsync(
                     "Sysmon repair — restart required",
@@ -371,7 +373,7 @@ namespace AutoScope.Views
                 return;
             }
 
-            await Dialogs.ShowInfoAsync("Error", $"Sysmon repair failed.\n\nDetails: {repaired.ErrorMessage}");
+            await Dialogs.ShowInfoAsync("Error", $"Sysmon repair failed.\n\nDetails: {repaired.Item2}");
             SetupSysmonBtn.IsEnabled = true;
             MonitorStatusText.Text = "Sysmon is not installed. Network tracking will not work.";
         }
@@ -580,7 +582,7 @@ namespace AutoScope.Views
             int pid = item.ProcessId;
             try
             {
-                var id = await Task.Run(() => Services.SvchostIdentityService.Resolve(pid));
+                var id = await Task.Run(() => AutoScope.Engines.Watch.SvchostIdentityService.Resolve(pid));
                 // The row may have been re-attributed while the WMI query ran —
                 // the identity belongs to the old tenant, not the new one.
                 if (item.ProcessId != pid) { item.AbandonIdentity(); return; }
@@ -1513,11 +1515,11 @@ namespace AutoScope.Views
         /// start-time window ±5 s AND image match &gt; window &gt; image —
         /// ties keep the newest record (the list comes newest-first).
         /// </summary>
-        private static SysmonArchiveService.ArchiveEvent PickBestCreateRecord(
-            List<SysmonArchiveService.ArchiveEvent> records, SvchostMonitorItem item)
+        private static ArchiveEvent PickBestCreateRecord(
+            List<ArchiveEvent> records, SvchostMonitorItem item)
         {
             if (records == null || records.Count == 0) return null;
-            SysmonArchiveService.ArchiveEvent best = null;
+            ArchiveEvent best = null;
             int bestScore = -1;
             foreach (var rec in records)
             {
