@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -572,6 +572,13 @@ namespace AutoScope.Services
         /// </summary>
         public async Task<bool> CheckRecentDnsLookupAsync(string domain)
         {
+            // The domain comes from the user-editable telemetry_rules.json and
+            // is interpolated into a powershell -Command string — an unvalidated
+            // value there is arbitrary command execution elevated (the hosts-pin
+            // path already defends this exact boundary; match it).
+            if (string.IsNullOrWhiteSpace(domain) ||
+                !System.Text.RegularExpressions.Regex.IsMatch(domain, @"^[A-Za-z0-9.-]+$"))
+                return false;
             var ps = $"if (Get-DnsClientCache -ErrorAction SilentlyContinue | Where-Object {{ $_.Entry -like '*{domain}*' }}) {{ 'SEEN' }} else {{ 'CLEAN' }}";
             var (output, _, _) = await ProcessRunner.RunWithDetailsAsync("powershell.exe",
                 $"-NoProfile -NonInteractive -Command \"{ps}\"");

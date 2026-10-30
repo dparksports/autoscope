@@ -1,6 +1,6 @@
-using System;
-using AutoScope.Engines.Firewall;
-using AutoScope.Engines.Core;
+﻿using System;
+using AutoCommand.Engines.Firewall;
+using AutoCommand.Engines.Core;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;

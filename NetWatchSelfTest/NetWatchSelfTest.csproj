@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <!-- NetWatch self-test, now validating the F# Engines.Watch: dual-family
        TCP table (LIVE held [::1] connection) + Sysmon archive engine
        (watermark dedupe, day rotation, search, prune, corrupt-line
@@ -12,6 +12,8 @@
     <AssemblyName>NetWatchSelfTest</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Engines\Engines.Watch\Engines.Watch.fsproj" />
+    <ProjectReference Include="..\..\autocommand-iii\Engines\Engines.Watch\Engines.Watch.fsproj" />
+    <Using Include="AutoCommand.Engines.Watch" />
+    <Using Include="AutoCommand.Engines.Core" />
   </ItemGroup>
 </Project>

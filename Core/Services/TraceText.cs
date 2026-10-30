@@ -1,6 +1,6 @@
-using System.Net;
-using AutoScope.Engines.Bridge;
-using AutoScope.Engines.Watch;
+﻿using System.Net;
+using AutoCommand.Engines.Bridge;
+using AutoCommand.Engines.Watch;
 using System.Net.Sockets;
 using System.Text;
 using AutoScope.Models;

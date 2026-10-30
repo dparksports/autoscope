@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text.Json.Nodes;
-using AutoScope.Engines.Bridge;
-using AutoScope.Engines.Core;
+using AutoCommand.Engines.Bridge;
+using AutoCommand.Engines.Core;
 using AutoScope.Services;
 
 namespace AutoScope
@@ -63,9 +63,9 @@ namespace AutoScope
         /// <summary>Call once at app startup, before any session can start.</summary>
         public static void Wire()
         {
-            AutoScope.Engines.Bridge.AgentBridgeService.Ui = new AgentBridgeUI();
-            AutoScope.Engines.Bridge.AgentBridgeService.Shared =
-                new AutoScope.Engines.Bridge.AgentBridgeService(
+            AutoCommand.Engines.Bridge.AgentBridgeService.Ui = new AgentBridgeUI();
+            AutoCommand.Engines.Bridge.AgentBridgeService.Shared =
+                new AutoCommand.Engines.Bridge.AgentBridgeService(
                     Identity.autoscope(), new ToolRegistryAdapter());
         }
     }

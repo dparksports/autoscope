@@ -1,7 +1,7 @@
-using System;
-using AutoScope.Engines.Bridge;
-using AutoScope.Engines.Watch;
-using AutoScope.Engines.Firewall;
+﻿using System;
+using AutoCommand.Engines.Bridge;
+using AutoCommand.Engines.Watch;
+using AutoCommand.Engines.Firewall;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -11,8 +11,8 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Windows.UI;
 using AutoScope.Services;
-using AutoScope.Engines.Core;
-using AutoScope.Engines.Diagnosis;
+using AutoCommand.Engines.Core;
+using AutoCommand.Engines.Diagnosis;
 
 namespace AutoScope.Views
 {
@@ -444,7 +444,7 @@ namespace AutoScope.Views
         /// <summary>App record → engine row: the one place the UI model
         /// crosses into the F# engines.</summary>
         private static List<TrafficRow> ToEngineRows(
-            System.Collections.Generic.List<AutoScope.Engines.Watch.TransmissionRecord> rows) =>
+            System.Collections.Generic.List<AutoCommand.Engines.Watch.TransmissionRecord> rows) =>
             rows.Select(r => new TrafficRow(r.TsUtc, r.Pid, r.Image, r.ProcessDisplay,
                 r.RemoteIp, r.RemotePort, r.Sni, r.ClientBytes, r.ServerBytes)).ToList();
 

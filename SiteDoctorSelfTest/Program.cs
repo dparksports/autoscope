@@ -1,4 +1,4 @@
-// Site doctor self-test — the Site Doctor pipeline ("why is this site slow
+﻿// Site doctor self-test — the Site Doctor pipeline ("why is this site slow
 // / broken / can't sign in"), proven at the source. This build validates the
 // F# ENGINES (Engines.Diagnosis): a C# test harness consuming the F#
 // libraries directly is itself part of the validation — C#-consumes-F# is
@@ -19,9 +19,10 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
-using AutoScope.Engines.Core;
-using AutoScope.Engines.Diagnosis;
+using AutoCommand.Engines.Core;
+using AutoCommand.Engines.Diagnosis;
 
+using Engines = AutoCommand.Engines;
 int failures = 0;
 void Check(string name, bool pass, string evidence = "")
 {
@@ -122,13 +123,13 @@ var vBlocked = SiteVerdict.Decide(null, Report(new List<EdgeProbe>
 {
     new() { Ip = "1.2.3.4", TcpError = "connection refused" },
     new() { Ip = "5.6.7.8", TcpError = "no TCP answer in 4000ms" },
-}));
+}), null);
 Check("verdict: all-TCP-failed → Blocked", vBlocked.Kind == VerdictKind.Blocked, vBlocked.Kind.ToString());
 
 var vDrop = SiteVerdict.Decide(null, Report(new List<EdgeProbe>
 {
     new() { Ip = "47.246.23.220", TcpConnectMs = 30, TlsPlainMs = 54, TlsPlainVersion = "Tls12", TlsDefaultError = "timeout" },
-}, controls: new List<ControlProbe> { new() { Host = "ctl", TcpConnectMs = 11, TlsMs = 15 } }));
+}, controls: new List<ControlProbe> { new() { Host = "ctl", TcpConnectMs = 11, TlsMs = 15 } }), null);
 Check("verdict: split hello shapes → HandshakeDropping", vDrop.Kind == VerdictKind.HandshakeDropping, vDrop.Kind.ToString());
 Check("verdict: headline names the DROPPED shape",
     vDrop.Headline.Contains("Windows-default handshake"), vDrop.Headline);
@@ -140,20 +141,20 @@ var vSteer = SiteVerdict.Decide(null, Report(
         new() { Ips = new List<string> { "1.1.1.1" } },
         new() { Ips = new List<string> { "2.2.2.2" } },
         new() { Ips = new List<string> { "3.3.3.3" } },
-    }));
+    }), null);
 Check("verdict: rotating DNS → Steering", vSteer.Kind == VerdictKind.Steering, vSteer.Kind.ToString());
 
 var vFar = SiteVerdict.Decide(null, Report(
     new List<EdgeProbe> { new() { Ip = "9.9.9.9", TcpConnectMs = 210, TlsDefaultMs = 320, TlsDefaultVersion = "Tls13", TlsPlainMs = 300, TlsPlainVersion = "Tls12" } },
-    controls: new List<ControlProbe> { new() { Host = "ctl", TcpConnectMs = 10, TlsMs = 15 } }));
+    controls: new List<ControlProbe> { new() { Host = "ctl", TcpConnectMs = 10, TlsMs = 15 } }), null);
 Check("verdict: 20x control latency → FarAway", vFar.Kind == VerdictKind.FarAway, vFar.Kind.ToString());
 
 var vHealthy = SiteVerdict.Decide(fpCalm, Report(
     new List<EdgeProbe> { new() { Ip = "140.82.114.3", TcpConnectMs = 40, TlsDefaultMs = 60, TlsDefaultVersion = "Tls13", TlsPlainMs = 58, TlsPlainVersion = "Tls12" } },
-    controls: new List<ControlProbe> { new() { Host = "ctl", TcpConnectMs = 30, TlsMs = 45 } }));
+    controls: new List<ControlProbe> { new() { Host = "ctl", TcpConnectMs = 30, TlsMs = 45 } }), null);
 Check("verdict: fast + calm → Healthy", vHealthy.Kind == VerdictKind.Healthy, vHealthy.Kind.ToString());
 
-var vNone = SiteVerdict.Decide(null, null);
+var vNone = SiteVerdict.Decide(null, null, null);
 Check("verdict: no evidence → Insufficient", vNone.Kind == VerdictKind.Insufficient, vNone.Kind.ToString());
 
 // ─────────────────────────────────────────────────────────────────────
@@ -356,7 +357,7 @@ var vLive = SiteVerdict.Decide(null, new SiteProbeReport
             ? new() { Host = "synthetic-ctl", TcpConnectMs = 5, TlsMs = 10 }
             : new() { Host = "localhost", TcpConnectMs = healthyEdge.TcpConnectMs, TlsMs = healthyEdge.TlsDefaultMs },
     },
-});
+}, null);
 Check("live: black-hole edge + healthy control → HandshakeDropping",
     vLive.Kind == VerdictKind.HandshakeDropping, vLive.Kind.ToString());
 
@@ -375,7 +376,7 @@ var vLocalBroken = SiteVerdict.Decide(null, new SiteProbeReport
     {
         new() { Host = "ctl", TcpConnectMs = 8, Error = "server never answered" },
     },
-});
+}, null);
 Check("live: all handshakes fail incl. control → LocalTlsBroken",
     vLocalBroken.Kind == VerdictKind.LocalTlsBroken, vLocalBroken.Kind.ToString());
 

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <!-- AutoScope.Core — the engine layer ported from AutoCommand
        (Services/Helpers/Models + SecurityEnforcer). UI-framework-free;
@@ -23,10 +23,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Engines\Engines.Core\Engines.Core.fsproj" />
-    <ProjectReference Include="..\Engines\Engines.Diagnosis\Engines.Diagnosis.fsproj" />
-    <ProjectReference Include="..\Engines\Engines.Firewall\Engines.Firewall.fsproj" />
-    <ProjectReference Include="..\Engines\Engines.Watch\Engines.Watch.fsproj" />
-    <ProjectReference Include="..\Engines\Engines.Bridge\Engines.Bridge.fsproj" />
+    <ProjectReference Include="..\..\autocommand-iii\Engines\Engines.Core\Engines.Core.fsproj" />
+    <ProjectReference Include="..\..\autocommand-iii\Engines\Engines.Diagnosis\Engines.Diagnosis.fsproj" />
+    <ProjectReference Include="..\..\autocommand-iii\Engines\Engines.Firewall\Engines.Firewall.fsproj" />
+    <ProjectReference Include="..\..\autocommand-iii\Engines\Engines.Watch\Engines.Watch.fsproj" />
+    <ProjectReference Include="..\..\autocommand-iii\Engines\Engines.Bridge\Engines.Bridge.fsproj" />
   </ItemGroup>
 </Project>

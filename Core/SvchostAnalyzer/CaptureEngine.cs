@@ -1,6 +1,6 @@
-using System.Diagnostics;
-using AutoScope.Engines.Bridge;
-using AutoScope.Engines.Watch;
+﻿using System.Diagnostics;
+using AutoCommand.Engines.Bridge;
+using AutoCommand.Engines.Watch;
 using System.Management;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;

@@ -1,4 +1,4 @@
-<Solution>
+﻿<Solution>
   <Folder Name="/AgentProxy/">
     <Project Path="AgentProxy/AutoScope.AgentProxy.csproj" />
   </Folder>
@@ -7,13 +7,6 @@
   </Folder>
   <Folder Name="/Core/">
     <Project Path="Core/AutoScope.Core.csproj" />
-  </Folder>
-  <Folder Name="/Engines/">
-    <Project Path="Engines/Engines.Bridge/Engines.Bridge.fsproj" />
-    <Project Path="Engines/Engines.Core/Engines.Core.fsproj" />
-    <Project Path="Engines/Engines.Diagnosis/Engines.Diagnosis.fsproj" />
-    <Project Path="Engines/Engines.Firewall/Engines.Firewall.fsproj" />
-    <Project Path="Engines/Engines.Watch/Engines.Watch.fsproj" />
   </Folder>
   <Project Path="NetWatchSelfTest/NetWatchSelfTest.csproj" />
   <Project Path="SiteDoctorSelfTest/SiteDoctorSelfTest.csproj" />

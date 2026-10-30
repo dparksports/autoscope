@@ -1,7 +1,7 @@
-<Window x:Class="AutoScope.Views.ProcessTraceWindow"
+﻿<Window x:Class="AutoScope.Views.ProcessTraceWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:services="using:AutoScope.Engines.Watch"
+        xmlns:services="using:AutoCommand.Engines.Watch"
         Title="PID Inquiry">
     <!-- WinUI port: WPF Window Width/Height/MinWidth/MinHeight/
          WindowStartupLocation/Background have no XAML equivalent on a WinUI

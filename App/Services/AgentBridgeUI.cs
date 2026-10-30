@@ -1,6 +1,6 @@
-using System;
-using AutoScope.Engines.Bridge;
-using AutoScope.Engines.Watch;
+﻿using System;
+using AutoCommand.Engines.Bridge;
+using AutoCommand.Engines.Watch;
 using System.Threading.Tasks;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
@@ -21,7 +21,11 @@ namespace AutoScope.Services
     {
         private readonly DispatcherQueue _dq = DispatcherQueue.GetForCurrentThread();
 
-        public bool IsUiAvailable => App.MainWin?.Content != null;
+        /// <summary>Read from the RPC listener thread before every mutating
+        /// tool runs — must not touch Window.Content (COM-marshalled,
+        /// thread-affine). App.UiReady is a plain volatile bool maintained
+        /// by the UI thread, so this is safe from any thread.</summary>
+        public bool IsUiAvailable => App.UiReady;
 
         public void BeginInvokeOnUI(Action action)
         {

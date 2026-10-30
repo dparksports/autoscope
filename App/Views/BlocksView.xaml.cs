@@ -1,8 +1,8 @@
-using System;
-using AutoScope.Engines.Bridge;
-using AutoScope.Engines.Watch;
-using AutoScope.Engines.Firewall;
-using AutoScope.Engines.Core;
+﻿using System;
+using AutoCommand.Engines.Bridge;
+using AutoCommand.Engines.Watch;
+using AutoCommand.Engines.Firewall;
+using AutoCommand.Engines.Core;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.UI.Xaml;
@@ -57,7 +57,7 @@ namespace AutoScope.Views
             }
         }
         public string ClassDisplay => Record.IsIp ? Record.ClassAtBlock : Record.ClassAtBlock;
-        public Brush ClassBrush;
+        public Brush ClassBrush { get; set; }
         public string ClassToolTip => Record.IsIp
             ? $"Ownership classification captured at block time:\n{Record.ClassAtBlock}"
             : $"Target type: {Record.ClassAtBlock}";
@@ -67,9 +67,9 @@ namespace AutoScope.Views
             $"({DateTime.UtcNow - Record.CreatedUtc:dd\\d\\ hh\\h\\ mm\\m} ago) · origin: {Record.Origin}\n" +
             $"identity: {(Record.Attrib == "none" ? "unresolved" : Record.Attrib)}";
 
-        public string LastTraffic = "…";
-        public string LastTrafficToolTip = "Resolving from live monitor and Sysmon archive…";
-        public Brush LastTrafficBrush;
+        public string LastTraffic { get; set; } = "…";
+        public string LastTrafficToolTip { get; set; } = "Resolving from live monitor and Sysmon archive…";
+        public Brush LastTrafficBrush { get; set; }
         /// <summary>Newest attempt time (live or archived) — the Restore
         /// guide's ranking signal; null when no traffic was ever found.</summary>
         public DateTime? LastTrafficUtc;
@@ -79,11 +79,11 @@ namespace AutoScope.Views
 
     public sealed class BlockGroupVm
     {
-        public string ServiceKey;
-        public string DisplayName;
-        public string Description;
+        public string ServiceKey { get; set; }
+        public string DisplayName { get; set; }
+        public string Description { get; set; }
         public ServiceImpact Impact;
-        public string Summary;          // "6 blocks · 4 Akamai · 2 Azure · 1 paused"
+        public string Summary { get; set; }   // "6 blocks · 4 Akamai · 2 Azure · 1 paused"
         public string ImpactGlyph => Impact switch
         {
             ServiceImpact.High => "🔴",
@@ -96,8 +96,8 @@ namespace AutoScope.Views
             ServiceImpact.Medium => "Medium impact — blocking this degrades Windows features",
             _ => "Normal impact — routine blocking target",
         };
-        public List<BlockRowVm> Rows = new();
-        public bool Expanded;
+        public List<BlockRowVm> Rows { get; set; } = new();
+        public bool Expanded { get; set; }
         public bool AnyEnabled => Rows.Any(r => r.RulesEnabled);
         public string GroupActionLabel => AnyEnabled ? $"⏸ Pause all ({Rows.Count})" : $"▶ Resume all ({Rows.Count})";
         public string GroupActionToolTip => AnyEnabled

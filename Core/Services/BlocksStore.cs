@@ -1,11 +1,12 @@
-using System;
-using AutoScope.Engines.Firewall;
-using AutoScope.Engines.Core;
+﻿using System;
+using AutoCommand.Engines.Firewall;
+using AutoCommand.Engines.Core;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 
+using Engines = AutoCommand.Engines;
 namespace AutoScope.Services
 {
     /// <summary>One firewall block, as persisted in blocks.txt (v3).</summary>

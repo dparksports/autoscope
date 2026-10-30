@@ -1,10 +1,11 @@
-using System;
-using AutoScope.Engines.Bridge;
-using AutoScope.Engines.Watch;
+﻿using System;
+using AutoCommand.Engines.Bridge;
+using AutoCommand.Engines.Watch;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
+using Engines = AutoCommand.Engines;
 namespace AutoScope.Services
 {
     /// <summary>

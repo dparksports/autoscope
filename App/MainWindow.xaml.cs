@@ -1,8 +1,8 @@
-using System;
-using AutoScope.Engines.Bridge;
-using AutoScope.Engines.Watch;
-using AutoScope.Engines.Firewall;
-using AutoScope.Engines.Core;
+﻿using System;
+using AutoCommand.Engines.Bridge;
+using AutoCommand.Engines.Watch;
+using AutoCommand.Engines.Firewall;
+using AutoCommand.Engines.Core;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Microsoft.UI.Xaml;
@@ -191,6 +191,7 @@ namespace AutoScope
 
         private void Window_Closed(object sender, WindowEventArgs args)
         {
+            App.UiReady = false;   // bridge mutating pre-check denies cleanly from here on
             _enforcer?.Stop();
 
             // Stop the shared capture FIRST so live flows finalize into the

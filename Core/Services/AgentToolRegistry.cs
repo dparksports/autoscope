@@ -1,8 +1,8 @@
-using System.Collections.Generic;
-using AutoScope.Engines.Bridge;
-using AutoScope.Engines.Watch;
-using AutoScope.Engines.Firewall;
-using AutoScope.Engines.Core;
+﻿using System.Collections.Generic;
+using AutoCommand.Engines.Bridge;
+using AutoCommand.Engines.Watch;
+using AutoCommand.Engines.Firewall;
+using AutoCommand.Engines.Core;
 using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
 using System.IO;
@@ -13,7 +13,7 @@ using System.Text.Json.Nodes;
 using System.Threading;
 using SvchostAnalyzer.Core;
 
-using AutoScope.Engines.Diagnosis;
+using AutoCommand.Engines.Diagnosis;
 
 namespace AutoScope.Services
 {
@@ -175,7 +175,8 @@ namespace AutoScope.Services
                 "Create outbound TCP+UDP firewall block rules for a remote IP (the same 2-rule scheme " +
                 "and provenance notes as the app's Process Monitor). Asks the user in AutoScope for every call.",
                 Schema(("ip", "Remote IP to block", true),
-                       ("reason", "Why — stored in the rule's provenance description", false)),
+                       ("reason", "Why — stored in the rule's provenance description", false),
+                       ("dry_run", "true = validate the IP and preview without asking the user or changing anything", false)),
                 true,
                 a => BlockIp(a).GetAwaiter().GetResult(),
                 a => $"Create outbound firewall BLOCK rules for {a["ip"]}?\n\n{IpClassification.WarningText(a["ip"]?.GetValue<string>())}" +
@@ -184,11 +185,22 @@ namespace AutoScope.Services
             new Tool(
                 "unblock_ip",
                 "Remove firewall block rules previously created for a remote IP. Asks the user for every call.",
-                Schema(("ip", "Remote IP to unblock", true)),
+                Schema(("ip", "Remote IP to unblock", true),
+                       ("dry_run", "true = report which rules would be removed without asking or removing", false)),
                 true,
                 a =>
                 {
-                    int n = AutoScope.Services.Fw.Service.RemoveBlockRulesForIpAsync(a["ip"]?.GetValue<string>())
+                    string ip = a["ip"]?.GetValue<string>();
+                    if (string.Equals(a["dry_run"]?.GetValue<string>(), "true", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var inv = AutoScope.Services.Fw.Service.GetBlockedInventoryAsync().GetAwaiter().GetResult();
+                        var t = inv.FirstOrDefault(x => string.Equals(x.Ip, ip, StringComparison.OrdinalIgnoreCase));
+                        return t == null
+                            ? $"dry run — no block rules exist for {ip}; nothing would be removed."
+                            : $"dry run — would remove {t.EnabledRules} of {t.Rules} rule(s) for {ip}" +
+                              $"; no rules changed, no confirmation asked.";
+                    }
+                    int n = AutoScope.Services.Fw.Service.RemoveBlockRulesForIpAsync(ip)
                                    .GetAwaiter().GetResult();
                     return $"Removed {n} rule(s).";
                 },
@@ -199,7 +211,9 @@ namespace AutoScope.Services
                 "Forcefully terminate a process by PID. The confirmation dialog shows the LIVE process " +
                 "name at the moment of the ask (PID-reuse guard). Asks the user for every call.",
                 Schema(("pid", "Process ID to terminate", true),
-                       ("reason", "Why", false)),
+                       ("reason", "Why", false),
+                       ("expect_name", "Process name you saw when you looked this PID up — the kill refuses if the PID now belongs to a different process (PID-reuse guard)", false),
+                       ("dry_run", "true = report the live process without asking or killing", false)),
                 true,
                 a => KillProcess(a),
                 a => DescribeLiveProcess(a["pid"]?.GetValue<int>() ?? 0) + ReasonSuffix(a)),
@@ -209,7 +223,8 @@ namespace AutoScope.Services
                 "Disable a scheduled task (reversible: schtasks /Change /TN <path> /ENABLE). " +
                 "Asks the user for every call.",
                 Schema(("task_path", "Scheduled task path", true),
-                       ("reason", "Why", false)),
+                       ("reason", "Why", false),
+                       ("dry_run", "true = report the task's current state without asking or changing it", false)),
                 true,
                 a => DisableTask(a),
                 a => $"Disable scheduled task '{a["task_path"]}'?" + ReasonSuffix(a)),
@@ -786,7 +801,7 @@ namespace AutoScope.Services
             int minutes = Math.Clamp(a["minutes"]?.GetValue<int>() ?? 1440, 1, 60 * 24 * 30);
 
             var rows = TransmissionsArchiveService.Read(4000, null, null, DateTime.UtcNow.AddMinutes(-minutes))
-                .Select(r => new AutoScope.Engines.Core.TrafficRow(r.TsUtc, r.Pid, r.Image, r.ProcessDisplay, r.RemoteIp, r.RemotePort, r.Sni, r.ClientBytes, r.ServerBytes)).ToList();
+                .Select(r => new AutoCommand.Engines.Core.TrafficRow(r.TsUtc, r.Pid, r.Image, r.ProcessDisplay, r.RemoteIp, r.RemotePort, r.Sni, r.ClientBytes, r.ServerBytes)).ToList();
             var siteRows = rows.Where(r => string.Equals(r.Sni, host, StringComparison.OrdinalIgnoreCase)).ToList();
             var all = SiteFingerprintService.AllFingerprints(rows);
             var fingerprint = SiteFingerprintService.Fingerprint(
@@ -815,7 +830,7 @@ namespace AutoScope.Services
             // page's other hosts silently blocked during this browser's
             // recorded visits? Blocked connects carry no hostname, so only
             // this join can see them. Degrades to null, never throws.
-            AutoScope.Engines.Diagnosis.Report dep = null;
+            AutoCommand.Engines.Diagnosis.Report dep = null;
             try
             {
                 BlockHitFeedService.Instance.Start();
@@ -940,6 +955,10 @@ namespace AutoScope.Services
             string ip = a["ip"]?.GetValue<string>();
             if (!System.Net.IPAddress.TryParse(ip, out _)) return $"'{ip}' is not a valid IP address.";
             string reason = a["reason"]?.GetValue<string>();
+            if (string.Equals(a["dry_run"]?.GetValue<string>(), "true", StringComparison.OrdinalIgnoreCase))
+                return $"dry run — would create outbound TCP+UDP block rules for {ip}" +
+                       (string.IsNullOrEmpty(reason) ? "" : $" ({reason})") +
+                       "; no rules changed, no confirmation asked. Call again without dry_run to do it.";
             string note = $"[agent request, user-confirmed {DateTime.UtcNow:yyyy-MM-dd HH:mm} UTC]" +
                           (string.IsNullOrEmpty(reason) ? "" : $" {reason}") + " · AutoScope AI access";
             var (created, updated) = await AutoScope.Services.Fw.Service.AddIpBlockAsync(ip, note);
@@ -952,10 +971,28 @@ namespace AutoScope.Services
         {
             int pid = a["pid"]?.GetValue<int>() ?? 0;
             if (pid <= 4) return "Refusing to kill PID 0–4 (system).";
+            if (string.Equals(a["dry_run"]?.GetValue<string>(), "true", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    using var probe = Process.GetProcessById(pid);
+                    return $"dry run — PID {pid} is '{probe.ProcessName}'; nothing killed, no confirmation asked.";
+                }
+                catch (ArgumentException) { return $"dry run — PID {pid} already exited."; }
+                catch (Exception ex) { return $"dry run — could not read PID {pid}: {ex.Message}"; }
+            }
+            string expectName = a["expect_name"]?.GetValue<string>();
             try
             {
                 var proc = Process.GetProcessById(pid);
                 string name = proc.ProcessName;
+                // PID-reuse guard: the user confirmed a SPECIFIC process.
+                // If the PID now belongs to a different image, refuse —
+                // the agent must re-look and re-ask.
+                if (!string.IsNullOrEmpty(expectName) &&
+                    !string.Equals(name, expectName, StringComparison.OrdinalIgnoreCase))
+                    return $"Refused: PID {pid} now belongs to '{name}', but confirmation was for " +
+                           $"'{expectName}' (PID reuse). Look the PID up again and ask fresh.";
                 proc.Kill();
                 return $"Terminated PID {pid} ('{name}').";
             }
@@ -968,6 +1005,9 @@ namespace AutoScope.Services
             string path = a["task_path"]?.GetValue<string>();
             try
             {
+                if (string.Equals(a["dry_run"]?.GetValue<string>(), "true", StringComparison.OrdinalIgnoreCase))
+                    return $"dry run — would disable scheduled task '{path}'" +
+                           " (reversible via schtasks /Change /TN … /ENABLE); nothing changed, no confirmation asked.";
                 TaskSchedulerService.Instance.SetTaskEnabledAsync(path, false).GetAwaiter().GetResult();
                 return $"Disabled scheduled task '{path}'. Re-enable with: schtasks /Change /TN \"{path}\" /ENABLE";
             }

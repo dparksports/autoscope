@@ -1,8 +1,8 @@
-using System;
-using AutoScope.Engines.Bridge;
-using AutoScope.Engines.Watch;
-using AutoScope.Engines.Firewall;
-using AutoScope.Engines.Core;
+﻿using System;
+using AutoCommand.Engines.Bridge;
+using AutoCommand.Engines.Watch;
+using AutoCommand.Engines.Firewall;
+using AutoCommand.Engines.Core;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -585,7 +585,7 @@ namespace AutoScope.Views
             int pid = item.ProcessId;
             try
             {
-                var id = await Task.Run(() => AutoScope.Engines.Watch.SvchostIdentityService.Resolve(pid));
+                var id = await Task.Run(() => AutoCommand.Engines.Watch.SvchostIdentityService.Resolve(pid));
                 // The row may have been re-attributed while the WMI query ran —
                 // the identity belongs to the old tenant, not the new one.
                 if (item.ProcessId != pid) { item.AbandonIdentity(); return; }

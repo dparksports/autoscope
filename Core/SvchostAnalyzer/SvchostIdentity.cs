@@ -1,6 +1,6 @@
-using System.Linq;
-using AutoScope.Engines.Bridge;
-using AutoScope.Engines.Watch;
+﻿using System.Linq;
+using AutoCommand.Engines.Bridge;
+using AutoCommand.Engines.Watch;
 
 namespace SvchostAnalyzer.Core;
 

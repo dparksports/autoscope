@@ -1,6 +1,6 @@
-using Microsoft.UI.Xaml;
-using AutoScope.Engines.Bridge;
-using AutoScope.Engines.Watch;
+﻿using Microsoft.UI.Xaml;
+using AutoCommand.Engines.Bridge;
+using AutoCommand.Engines.Watch;
 using AutoScope.Services;
 
 namespace AutoScope
@@ -16,6 +16,14 @@ namespace AutoScope
     public partial class App : Application
     {
         public static MainWindow MainWin { get; private set; }
+
+        /// <summary>Thread-safe UI-availability flag for the bridge's
+        /// IsUiAvailable pre-check: set on the UI thread after the main
+        /// window is live, cleared on close. The RPC listener thread reads
+        /// this bool instead of touching Window.Content (a COM-marshalled
+        /// property that throws when read off the UI thread — the crash
+        /// class AutoCommand III fixed in v2026.10.30.15).</summary>
+        public static volatile bool UiReady;
 
         public App()
         {
@@ -45,7 +53,7 @@ namespace AutoScope
             // Engine composition: watch engines need the app identity
             // (data root) before first use; the bridge needs its UI seam and
             // the tool adapter. Before anything that touches an engine.
-            AutoScope.Engines.Watch.WatchConfig.Configure(AutoScope.Engines.Core.Identity.autoscope());
+            AutoCommand.Engines.Watch.WatchConfig.Configure(AutoCommand.Engines.Core.Identity.autoscope());
             BridgeHost.Wire();
 
             // First run: adopt an existing AutoCommand install — block records
@@ -82,6 +90,7 @@ namespace AutoScope
 
             MainWin = new MainWindow();
             MainWin.Activate();
+            UiReady = true;
         }
 
         // Off the UI thread: DetectInstallState probes sc.exe/wevtutil, the
@@ -94,7 +103,7 @@ namespace AutoScope
                 await System.Threading.Tasks.Task.Run(() =>
                 {
                     // one-shot ever: make pfirewall.log a usable second hit source
-                    AutoScope.Engines.Firewall.FirewallService.EnsureDropLoggingOnce();
+                    AutoCommand.Engines.Firewall.FirewallService.EnsureDropLoggingOnce();
 
                     var installer = new SysmonInstallerService();
                     if (installer.DetectInstallState() != SysmonInstallState.Installed)

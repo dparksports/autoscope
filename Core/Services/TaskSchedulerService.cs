@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -70,9 +70,12 @@ namespace AutoScope.Services
                         {
                             folderPath = fullPath.Substring(0, lastSlash);
                             // Simplify Microsoft\Windows paths
-                            if (folderPath.StartsWith(@"\Microsoft\Windows"))
+                            // trailing slash: \Microsoft\WindowsCE is a DIFFERENT
+                            // folder — the prefix-less compare corrupted CE task
+                            // paths (displayed as "CE…", reconstructed wrong)
+                            if (folderPath.StartsWith(@"\Microsoft\Windows\", StringComparison.OrdinalIgnoreCase))
                             {
-                                folderPath = folderPath.Substring(@"\Microsoft\Windows".Length);
+                                folderPath = folderPath.Substring(@"\Microsoft\Windows\".Length);
                                 if (folderPath.StartsWith("\\")) folderPath = folderPath.Substring(1);
                                 if (string.IsNullOrEmpty(folderPath)) folderPath = "Windows System";
                             }

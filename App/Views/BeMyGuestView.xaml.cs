@@ -1,6 +1,6 @@
-using System;
-using AutoScope.Engines.Bridge;
-using AutoScope.Engines.Watch;
+﻿using System;
+using AutoCommand.Engines.Bridge;
+using AutoCommand.Engines.Watch;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;

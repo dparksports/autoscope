@@ -1,8 +1,9 @@
-using System;
+﻿using System;
 using System.IO;
-using AutoScope.Engines.Core;
-using AutoScope.Engines.Firewall;
+using AutoCommand.Engines.Core;
+using AutoCommand.Engines.Firewall;
 
+using Engines = AutoCommand.Engines;
 namespace AutoScope.Services
 {
     /// <summary>

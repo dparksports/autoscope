@@ -1,14 +1,15 @@
-using System;
-using AutoScope.Engines.Bridge;
-using AutoScope.Engines.Watch;
+﻿using System;
+using AutoCommand.Engines.Bridge;
+using AutoCommand.Engines.Watch;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using AutoScope.Engines.Core;
-using AutoScope.Engines.Diagnosis;
+using AutoCommand.Engines.Core;
+using AutoCommand.Engines.Diagnosis;
 
+using Engines = AutoCommand.Engines;
 namespace AutoScope.Services
 {
     /// <summary>

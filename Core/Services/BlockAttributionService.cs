@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
 
-using AutoScope.Engines.Watch;
+using AutoCommand.Engines.Watch;
 
 namespace AutoScope.Services
 {
@@ -196,7 +196,7 @@ namespace AutoScope.Services
             if (stem == "svchost")
             {
                 string cmd = data.TryGetValue("CommandLine", out string c) ? c : null;
-                var parsed = AutoScope.Engines.Watch.SvchostIdentity.Parse(cmd);
+                var parsed = AutoCommand.Engines.Watch.SvchostIdentity.Parse(cmd);
                 if (!string.IsNullOrEmpty(parsed.DeclaredService))
                 {
                     string svc = parsed.DeclaredService.ToLowerInvariant();

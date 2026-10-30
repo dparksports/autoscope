@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Self-test for the "Why is this site slow?" pipeline, now validating the
        F# ENGINES: a C# harness consuming Engines.Diagnosis directly — the
@@ -19,7 +19,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Engines\Engines.Diagnosis\Engines.Diagnosis.fsproj" />
+    <ProjectReference Include="..\..\autocommand-iii\Engines\Engines.Diagnosis\Engines.Diagnosis.fsproj" />
   </ItemGroup>
 
 </Project>
