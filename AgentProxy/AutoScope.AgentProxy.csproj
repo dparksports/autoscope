@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <!-- The MCP client's spawn target: a tiny asInvoker console exe (no WPF,
        no admin, no UAC) that forwards stdio JSON-RPC to the running elevated
@@ -17,7 +17,7 @@
     <Product>AutoScope</Product>
     <!-- follows AutoScope.csproj's <Version> — release.ps1 bumps both so
          serverInfo/deps.json can never disagree with the app release -->
-    <Version>2026.10.26.2</Version>
+    <Version>2026.10.30.16</Version>
     <!-- no "+<git hash>" suffix on InformationalVersion: serverInfo.version
          and the release.ps1 version check want the clean number -->
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
